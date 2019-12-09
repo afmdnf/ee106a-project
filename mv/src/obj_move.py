@@ -19,20 +19,23 @@ gripper = baxter_gripper.Gripper(arm)
 
 def move(msg):
     items, transforms = msg.items, msg.transforms
-    if len(items) != len(transforms): return
+    if not transforms or len(items) != len(transforms): return
     print("Received command for %d items", len(items))
-
-    for i in range(len(items)):
-        obj_id = int(items[i])
-        x, y = transforms[i].transform.translation.x, transforms[i].transform.translation.y
+    
+    processed = sorted(zip(items, transforms), key=lambda x:(x[1].transform.translation.y, x[1].transform.translation.x))
+    for item, tr in processed:
+        obj_id = int(item)
         if obj_id not in [1, 2, 3]:
             print("[ERROR]: Invalid object %d at index %d", obj_id, i)
             continue
+
+        x, y = tr.transform.translation.x, tr.transform.translation.y
         # TODO: Check for valid x,y here
 
-        obj = None
         #x, y = 0.72, -0.257 # POSITION 1
         #x, y = 0.715, -0.109 # POSITION 2
+
+        obj = None
         if obj_id == 1:
             # TODO: Thresholding
             obj = Plate(x, y, gripper, planner)
@@ -58,7 +61,7 @@ def move(msg):
 
 if __name__ == '__main__':
     rospy.Subscriber("objects", Pickup, move)
-    #Wait for messages to arrive on the subscribed topics, and exit the node when it is killed with Ctrl+C
+    # Wait for messages to arrive on the subscribed topics, and exit the node when killed with Ctrl+C
     rospy.spin()
 
 
