@@ -8,6 +8,7 @@ from path_planner import PathPlanner
 
 from objects.cup import Cup
 from objects.plate import Plate
+from objects.spoon import Spoon
 
 from mv.msg import Pickup
 
@@ -39,8 +40,8 @@ def move(msg):
         if obj_id == 1:
             # TODO: Thresholding (y < -0.16)
             obj = Plate(x, y, gripper, planner)
-        # if obj_id == 2:
-        #     obj = Spoon(x, y, gripper, planner)
+        if obj_id == 2:
+            obj = Spoon(x, y, gripper, planner)
         elif obj_id == 3:
             obj = Cup(x, y, gripper, planner)
 

@@ -2,9 +2,9 @@
 import rospy
 import numpy as np
 
-class Plate(object):
+class Plate2(object):
 
-    def __init__(self, x, y, gripper, planner, threshold):
+    def __init__(self, x, y, gripper, planner):
         self.gripper, self.planner = gripper, planner
   
         offset, gripper_correction = 0.025, 0.04

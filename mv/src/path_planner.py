@@ -112,7 +112,7 @@ class PathPlanner(object):
         wpose = Pose()
         wpose.position.x, wpose.position.y, wpose.position.z = position[0], position[1], position[2]
         wpose.orientation.x, wpose.orientation.y, wpose.orientation.z, wpose.orientation.w = orientation[0], orientation[1], orientation[2], orientation[3]
-        return self._group.compute_cartesian_path([wpose], eef_step=0.01, jump_threshold=0.0)[0]
+        return self._group.compute_cartesian_path([wpose], eef_step=0.005, jump_threshold=0.0)[0]
 
     def execute_plan(self, plan):
         """

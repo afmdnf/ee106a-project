@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+from camera_control import get_correction
 
 class Cup(object):
 
@@ -8,7 +9,7 @@ class Cup(object):
         self.gripper, self.planner = gripper, planner
 
         self.radius = 0.03
-        self.hover_z, self.pickup_z = -0.22, -0.296
+        self.hover_z, self.pickup_z = -0.12, -0.296
         self.pickup_y = self.coord_y + self.radius
         self.orient = [0.0, 1.0, 0.0, 0.0]
 
@@ -16,10 +17,21 @@ class Cup(object):
 
     def perform_actions(self):
 
-        request1 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
+        request1 = self.planner.construct_plan([self.coord_x + 0.05, self.coord_y, self.hover_z], self.orient)
         if not self.planner.execute_plan(request1):
             raise Exception("Execution failed")
         rospy.sleep(1.0)
+
+        corr_x, corr_y = get_correction()
+        print(corr_x, corr_y)
+        self.coord_x -= (corr_x - 0.05)
+        self.coord_y -= corr_y
+        self.pickup_y = self.coord_y + self.radius
+
+        # request1 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
+        # if not self.planner.execute_plan(request1):
+        #     raise Exception("Execution failed")
+        # rospy.sleep(1.0)
 
         request2 = self.planner.waypoint_plan([self.coord_x, self.pickup_y, self.hover_z], self.orient)
         if not self.planner.execute_plan(request2):
