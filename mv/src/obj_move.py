@@ -12,7 +12,7 @@ from objects.spoon import Spoon
 
 from mv.msg import Pickup
 
-rospy.init_node('obj_listener', anonymous=True)
+rospy.init_node('obj_mover', anonymous=True)
 arm = "right"
 planner = PathPlanner(arm + "_arm")
 gripper = baxter_gripper.Gripper(arm)
@@ -38,8 +38,10 @@ def move(msg):
 
         obj = None
         if obj_id == 1:
-            # TODO: Thresholding (y < -0.16)
-            obj = Plate(x, y, gripper, planner)
+            if y < -0.16:
+                obj = Plate(x, y, gripper, planner, True)
+            else:
+                obj = Plate(x, y, gripper, planner, False)
         if obj_id == 2:
             obj = Spoon(x, y, gripper, planner)
         elif obj_id == 3:

@@ -17,7 +17,10 @@ class Plate(object):
         self.hover_y = y - (self.radius + offset) / np.sqrt(2)
         self.pickup_y = y - self.radius / np.sqrt(2)
 
-        self.orient = np.array([0.22, 0.781, 0.555, 0.179])
+        if threshold:
+            self.orient = np.array([0.5325, 0.6319, 0.411, 0.3847])
+        else:
+            self.orient = np.array([0.22, 0.781, 0.555, 0.179])
         self.orient /= np.linalg.norm(self.orient)
 
         self.final_x, self.final_y, self.final_z = self.coord_x, self.coord_y, 0.0 # SET THIS ACCORDINGLY

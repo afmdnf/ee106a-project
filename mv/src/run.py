@@ -10,7 +10,7 @@ from objects.plate import Plate
 from objects.spoon import Spoon
 
 
-rospy.init_node('obj_listener', anonymous=True)
+rospy.init_node('obj_mover', anonymous=True)
 arm = "right"
 planner = PathPlanner(arm + "_arm")
 gripper = baxter_gripper.Gripper(arm)
@@ -19,7 +19,7 @@ gripper.calibrate()
 gripper.close()
 
 x, y = 0.715, -0.17 # POSITION 2
-obj = Plate(x, y, gripper, planner)
+obj = Plate(x, y, gripper, planner, True)
 
 try:
     obj.perform_actions()
