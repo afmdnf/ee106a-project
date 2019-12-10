@@ -219,37 +219,23 @@ def to_grayscale(rgb_img):
     return np.dot(rgb_img[... , :3] , [0.299 , 0.587, 0.114])
 
 def segment_image(img): 
-    # ONLY USE ONE THRESHOLDING METHOD
-
-    # perform thresholding segmentation
-    # binary = threshold_segment_naive(to_grayscale(img), 50, 65).astype(np.uint8)
-
-    # perform clustering segmentation (make image binary)
-    # binary = cluster_segment(img, 2).astype(np.uint8) / 255
-
-    # if np.mean(binary) > 0.5:
-    #     binary = 1 - binary #invert the pixels if K-Means assigned 1's to background, and 0's to foreground
-
     masked_img = np.copy(img)
     masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2HSV)
-
-    # mask = (np.logical_or(masked_img[:,:,2] < 75, masked_img > 175))
 
     mask1 = cv2.inRange(masked_img, (0, 0, 200), (255, 100, 255))#Old values: 0,150,100 and 255,255,255
     mask2 = cv2.inRange(masked_img, (0, 150, 50), (255, 255, 255))
     mask = cv2.bitwise_or(mask1, mask2)
     mask = mask / 255
-    # masked_img = cv2.bitwise_and(masked_img, masked_img, mask= mask)
-    # binary[np.logical_and(np.logical_and(mask[:,:,0], mask[:,:,1]), mask[:,:,2])] = False
-
-   #  for xx in range(img.shape[0]):
-   #  	for yy in range(img.shape[1]):
-			# if(np.all(masked_img[xx,yy,:] < 30) or np.all(masked_img[xx,yy,:] > 220)):
-			# 	binary[xx, yy] = False
-
-    #show_image(masked_img, title = 'binary', grayscale = True)
-    #print(mask)
-    return mask
+    contours, _ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    blank = np.zeros(mask.shape)
+    masks = []
+    for c in contours:
+        if cv2.contourArea(c) < 1000:
+            continue
+        else:
+            filledContour = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness = -1)
+            masks.append(filledContour)
+    return masks
 
 """
 below are tests used for sanity checking you image, edit as you see appropriate

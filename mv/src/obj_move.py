@@ -37,7 +37,7 @@ def move(msg):
 
         obj = None
         if obj_id == 1:
-            # TODO: Thresholding
+            # TODO: Thresholding (y < -0.16)
             obj = Plate(x, y, gripper, planner)
         # if obj_id == 2:
         #     obj = Spoon(x, y, gripper, planner)

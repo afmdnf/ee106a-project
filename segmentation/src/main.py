@@ -32,7 +32,7 @@ import cv2
 from cv_bridge import CvBridge
 from sklearn.decomposition import PCA
 
-from image_segmentation import segment_image
+from image_segmentation import segment_image, show_image
 from pointcloud_segmentation import segment_pointcloud
 from sensor_msgs import point_cloud2
 import os
@@ -43,60 +43,19 @@ from mv.msg import StringArray
 pca = PCA(3)
 
 def get_camera_matrix(camera_info_msg):
-    # TODO: Return the camera intrinsic matrix as a 3x3 numpy array
-    # by retreiving information from the CameraInfo ROS message.
-    # Hint: numpy.reshape may be useful here.
     return np.array(camera_info_msg.K).reshape((3,3))
 
-def isolate_object_of_interest(points, image, cam_matrix, trans, rot):
+def isolate_objects_of_interest(points, image, cam_matrix, trans, rot):
     segmented_image = segment_image(image)
-    points = segment_pointcloud(points, segmented_image, cam_matrix, trans, rot)
-    return points
+    cloudList = []
+    for mask in segmented_image:
+        cloud = segment_pointcloud(np.copy(points), mask, cam_matrix, trans, rot)
+        cloudList.append(cloud)
+    return cloudList
 
 def numpy_to_pc2_msg(points):
     return ros_numpy.msgify(PointCloud2, points, stamp=rospy.Time.now(),
         frame_id='camera_depth_optical_frame')
-
-def find_blobs(im):
-
-    # Setup SimpleBlobDetector parameters.
-    params = cv2.SimpleBlobDetector_Params()
-
-    # Change thresholds
-    params.minThreshold = 10
-    params.maxThreshold = 200
-
-    # Filter by Area.
-    params.filterByArea = True
-    params.minArea = 1500
-
-    # Filter by Circularity
-    params.filterByCircularity = True
-    params.minCircularity = 0.1
-
-    # Filter by Convexity
-    params.filterByConvexity = True
-    params.minConvexity = 0.87
-
-    # Filter by Inertia
-    params.filterByInertia = True
-    params.minInertiaRatio = 0.01
-
-    # Create a detector with the parameters
-    detector = cv2.SimpleBlobDetector(params)
-
-    # Detect blobs.
-    keypoints = detector.detect(im)
-
-    # Draw detected blobs as red circles.
-    # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures
-    # the size of the circle corresponds to the size of blob
-
-    im_with_keypoints = cv2.drawKeypoints(im, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-    # Show blobs
-    cv2.imshow("Keypoints", im_with_keypoints)
-    cv2.waitKey(0)
 
 def pca_object(points):
     global pca
@@ -130,10 +89,9 @@ def classify_object(sigma):
     else:
         # cup = 3
         return 3
-
     return 0    
 
-def align_axes(points):
+def align_axes(points, object_num):
     global pca
     try:
         point_array = np.transpose(np.array([[p[0] for p in points],
@@ -149,7 +107,7 @@ def align_axes(points):
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "camera_depth_optical_frame"
-        t.child_frame_id = "object_center_of_mass"
+        t.child_frame_id = "object_center_of_mass_" + str(object_num)
         t.transform.translation.x = com[0]
         t.transform.translation.y = com[1]
         t.transform.translation.z = com[2]
@@ -164,9 +122,9 @@ def align_axes(points):
 
 
 class Data_Storer:
-    def __init__(self):
-        self.array = np.zeros(3)
-        self.pose = geometry_msgs.msg.TransformStamped()
+    def __init__(self, array = np.zeros(3), pose = geometry_msgs.msg.TransformStamped()):
+        self.array = array
+        self.pose = pose
         #print("hello")
 
 class PointcloudProcess:
@@ -196,7 +154,6 @@ class PointcloudProcess:
         
         self.points_pub = rospy.Publisher(points_pub_topic, PointCloud2, queue_size=10)
         self.image_pub = rospy.Publisher('segmented_image', Image, queue_size=10)
-
         
         ts = message_filters.ApproximateTimeSynchronizer([points_sub, image_sub, caminfo_sub],
                                                           10, 0.1, allow_headerless=True)
@@ -227,39 +184,26 @@ class PointcloudProcess:
                     tf.ExtrapolationException) as e:
                 print(e)
                 return [0, 0, 0]
-            points = isolate_object_of_interest(points, image, info, 
+            points = isolate_objects_of_interest(points, image, info, 
                 np.array(trans), np.array(rot))
-
-            find_blobs(image)
-
-            points_msg = numpy_to_pc2_msg(points)
-            self.points_pub.publish(points_msg)
-            # print("Published segmented pointcloud at timestamp:",
-                   # points_msg.header.stamp.secs)
-            my_data = Data_Storer()
-            
-
-            temp = pca_object(points)
-            pose = align_axes(points)
+            my_data = []
             br = tf2_ros.TransformBroadcaster()
-            br.sendTransform(pose)
-
-            my_data.array = temp
-            my_data.pose = pose
-            #print(my_data)
-
+            for idx, cloud in enumerate(points):
+                points_msg = numpy_to_pc2_msg(cloud)
+                self.points_pub.publish(points_msg)
+                temp = pca_object(cloud)
+                pose = align_axes(cloud, idx)
+                br.sendTransform(pose)
+                my_data.append(Data_Storer(temp, pose))
             return my_data
         else:
-            return Data_Storer()
+            return [Data_Storer()]
 
     def getObjectType():
         return self.object
 
     def getPose():
         return self.pose
-
-
-
 
 def main():
     CAM_INFO_TOPIC = '/camera/color/camera_info'
@@ -273,36 +217,39 @@ def main():
     pub = rospy.Publisher('objects', Pickup, queue_size=10)
     r = rospy.Rate(1000)
     ii = 0
-    sigma_array = np.zeros((20, 3))
-    #print(sigma_array)
-    #listener = tf.TransformListener()
-    
-    while not rospy.is_shutdown():
-        #print(sigma_array)
-        #sigma_array[ii] = process.publish_once_from_queue()
-        my_data = process.publish_once_from_queue()
-        sigma_array[ii] = my_data.array
-        pose = my_data.pose
-        ii = (ii + 1) % 20
-        pca_vals = np.nanmean(sigma_array, 0)
-        #print(pca_vals)
-        object_type = classify_object(pca_vals)
+    arrayFlag = True
+    sigma_array = [[[0]*3]*20]*10
+    last_object_type = []
+    buffer_idx = 0
 
-        #object_message = [[],[]], [[],[]]
-        #object_message.items = ['a']
-        #object_message.transforms = [geometry_msgs.msg.TransformStamped()]
-        #object_message.objects.append(object_type)
-        # object_message.transforms.append(pose)
-        #print(type(object_message.items))
-        # Publish our string to the 'chatter_talk' topic
-        try:
-            if object_type != 0:
-                pub.publish([int(object_type)], [pose])#, rospy.get_time())
-        except Exception:
-            traceback.print_exc()
-        #objects = [object_type]
-        #poses = [pose]
-        r.sleep()
+    while not rospy.is_shutdown():
+        my_data = process.publish_once_from_queue()
+        poseList = []
+        object_type = []
+        if len(sigma_array) < len(my_data):
+            sigma_array = [[[0]*3]*20]*len(my_data)
+        for idx, data in enumerate(my_data):
+            sigma_array[idx][ii][:] = data.array
+            poseList.append(data.pose)
+            pca_vals = np.nanmean(sigma_array[idx], 0)
+            object_type.append(classify_object(pca_vals))
+        ii = (ii + 1) % 20
+        nonzeros = [item != 0 for item in object_type]
+        print(object_type)
+
+        if last_object_type != object_type:
+            buffer_idx = 0
+            last_object_type = object_type
+        else:
+            buffer_idx += 1
+
+        if buffer_idx > 50:
+            buffer_idx = 0
+            try:
+                pub.publish(np.array(object_type)[nonzeros], np.array(poseList)[nonzeros])
+            except Exception:
+                traceback.print_exc()
+            r.sleep()
 
 if __name__ == '__main__':
     main()

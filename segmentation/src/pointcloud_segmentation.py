@@ -28,7 +28,7 @@ def segment_pointcloud(points, segmented_image, cam_matrix, trans, rot):
     linearized_pixel_coords = IDX2D(i, j, segmented_image.shape[1])
     linearized_segmentation = segmented_image.reshape(-1)
     point_labels = linearized_segmentation[linearized_pixel_coords]
-    return points[point_labels == 1]
+    return points[point_labels > 0]
 
 def project_points(points, cam_matrix, trans, rot):
     """
