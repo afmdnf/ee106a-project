@@ -18,8 +18,8 @@ os.system('rosrun baxter_tools tuck_arms.py -u')
 gripper.calibrate()
 gripper.close()
 
-x, y = 0.715, -0.17 # POSITION 2
-obj = Plate(x, y, gripper, planner, True)
+x, y = 0.715, -0.17
+obj = Plate(x, y, gripper, planner, True) # Thresholding is ON
 
 try:
     obj.perform_actions()

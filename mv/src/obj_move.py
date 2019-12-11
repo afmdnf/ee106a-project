@@ -20,9 +20,12 @@ gripper = baxter_gripper.Gripper(arm)
 
 def move(msg):
     items, transforms = msg.items, msg.transforms
-    if not transforms or len(items) != len(transforms): return
+    if not transforms or len(items) != len(transforms):
+        print("[ERROR]: Invalid message received")
+        return
     print("Received command for %d items", len(items))
-    
+
+    # Pick up objects starting from the rightmost (y) + closest (x)
     processed = sorted(zip(items, transforms), key=lambda x:(x[1].transform.translation.y, x[1].transform.translation.x))
     for item, tr in processed:
         obj_id = int(item)
@@ -43,7 +46,8 @@ def move(msg):
             else:
                 obj = Plate(x, y, gripper, planner, False)
         if obj_id == 2:
-            obj = Spoon(x, y, gripper, planner)
+            orient = [tr.transform.rotation.x, tr.transform.rotation.y, tr.transform.rotation.z, tr.transform.rotation.w]
+            obj = Spoon(x, y, gripper, planner)#, orient) # optionally, provide spoon orientation?
         elif obj_id == 3:
             obj = Cup(x, y, gripper, planner)
 
@@ -64,7 +68,6 @@ def move(msg):
 
 if __name__ == '__main__':
     rospy.Subscriber("objects", Pickup, move)
-    # Wait for messages to arrive on the subscribed topics, and exit the node when killed with Ctrl+C
     rospy.spin()
 
 

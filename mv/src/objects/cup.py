@@ -16,15 +16,14 @@ class Cup(object):
         self.final_x, self.final_y, self.final_z = x, y, 0.0 # SET THIS ACCORDINGLY
 
     def perform_actions(self):
-
-        request1 = self.planner.construct_plan([self.coord_x + 0.05, self.coord_y, self.hover_z], self.orient)
+        camera_move_ahead = 0.05
+        request1 = self.planner.construct_plan([self.coord_x + camera_move_ahead, self.coord_y, self.hover_z], self.orient)
         if not self.planner.execute_plan(request1):
             raise Exception("Execution failed")
         rospy.sleep(1.0)
 
         corr_x, corr_y = get_correction()
-        print(corr_x, corr_y)
-        self.coord_x -= (corr_x - 0.05)
+        self.coord_x -= (corr_x - camera_move_ahead)
         self.coord_y -= corr_y
         self.pickup_y = self.coord_y + self.radius
 
