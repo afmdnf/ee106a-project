@@ -194,7 +194,26 @@ class PointcloudProcess:
                 temp = pca_object(cloud)
                 pose = align_axes(cloud, idx)
                 br.sendTransform(pose)
-                my_data.append(Data_Storer(temp, pose))
+                try:
+                    pose_from_base = self.listener.lookupTransform('base', pose.child_frame_id, rospy.Time(0))
+                    #final_trans = geometry_msgs.msg.Transform(pose_from_base[0],pose_from_base[1])
+                    final_pose = geometry_msgs.msg.TransformStamped()
+                    final_pose.transform.translation.x = pose_from_base[0][0]
+                    final_pose.transform.translation.y = pose_from_base[0][1]
+                    final_pose.transform.translation.z = pose_from_base[0][2]
+
+                    final_pose.transform.rotation.x = pose_from_base[1][0]
+                    final_pose.transform.rotation.y = pose_from_base[1][1]
+                    final_pose.transform.rotation.z = pose_from_base[1][2]
+                    final_pose.transform.rotation.w = pose_from_base[1][3]
+                    final_pose.header.stamp = rospy.Time.now()
+                    final_pose.header.frame_id = "base"
+                    final_pose.child_frame_id = pose.child_frame_id
+                    #final_pose.transform = final_trans
+                    my_data.append(Data_Storer(temp, final_pose))
+                except Exception as e:
+                    print(e)
+                    return [Data_Storer()]
             return my_data
         else:
             return [Data_Storer()]
@@ -214,7 +233,7 @@ def main():
     rospy.init_node('realsense_listener')
     process = PointcloudProcess(POINTS_TOPIC, RGB_IMAGE_TOPIC,
                                 CAM_INFO_TOPIC, POINTS_PUB_TOPIC)
-    pub = rospy.Publisher('objects', Pickup, queue_size=10)
+    pub = rospy.Publisher('objects', Pickup, queue_size=1)
     r = rospy.Rate(1000)
     ii = 0
     arrayFlag = True
@@ -243,7 +262,7 @@ def main():
         else:
             buffer_idx += 1
 
-        if buffer_idx > 50:
+        if buffer_idx > 10:
             buffer_idx = 0
             try:
                 pub.publish(np.array(object_type)[nonzeros], np.array(poseList)[nonzeros])

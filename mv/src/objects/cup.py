@@ -13,24 +13,24 @@ class Cup(object):
         self.pickup_y = self.coord_y + self.radius
         self.orient = [0.0, 1.0, 0.0, 0.0]
 
-        self.final_x, self.final_y, self.final_z = x, y, 0.0 # SET THIS ACCORDINGLY
+        self.final_x, self.final_y, self.final_z = 0.46, -0.96, 0.0#-0.08, -0.9, 0.0#x, y, 0.0 # SET THIS ACCORDINGLY
 
     def perform_actions(self):
-        camera_move_ahead = 0.05
-        request1 = self.planner.construct_plan([self.coord_x + camera_move_ahead, self.coord_y, self.hover_z], self.orient)
-        if not self.planner.execute_plan(request1):
-            raise Exception("Execution failed")
-        rospy.sleep(1.0)
-
-        corr_x, corr_y = get_correction()
-        self.coord_x -= (corr_x - camera_move_ahead)
-        self.coord_y -= corr_y
-        self.pickup_y = self.coord_y + self.radius
-
-        # request1 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
+        # camera_move_ahead = 0.05
+        # request1 = self.planner.construct_plan([self.coord_x + camera_move_ahead, self.coord_y, self.hover_z], self.orient)
         # if not self.planner.execute_plan(request1):
         #     raise Exception("Execution failed")
         # rospy.sleep(1.0)
+
+        # corr_x, corr_y = get_correction("cup")
+        # self.coord_x -= (corr_x - camera_move_ahead)
+        # self.coord_y -= corr_y
+        # self.pickup_y = self.coord_y + self.radius
+
+        request1 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
+        if not self.planner.execute_plan(request1):
+            raise Exception("Execution failed")
+        rospy.sleep(1.0)
 
         request2 = self.planner.waypoint_plan([self.coord_x, self.pickup_y, self.hover_z], self.orient)
         if not self.planner.execute_plan(request2):

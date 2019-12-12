@@ -223,9 +223,9 @@ def segment_image(img):
     masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2HSV)
 
     mask1 = cv2.inRange(masked_img, (0, 0, 200), (255, 100, 255))#Old values: 0,150,100 and 255,255,255
-    mask2 = cv2.inRange(masked_img, (0, 150, 50), (255, 255, 255))
-    mask = cv2.bitwise_or(mask1, mask2)
-    mask = mask / 255
+    #mask2 = cv2.inRange(masked_img, (0, 150, 50), (255, 255, 255))
+    #mask = cv2.bitwise_or(mask1, mask2)
+    mask = mask1 / 255 #used to be mask/255
     contours, _ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2:]
     blank = np.zeros(mask.shape)
     masks = []

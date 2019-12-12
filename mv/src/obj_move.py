@@ -16,6 +16,7 @@ rospy.init_node('obj_mover', anonymous=True)
 arm = "right"
 planner = PathPlanner(arm + "_arm")
 gripper = baxter_gripper.Gripper(arm)
+os.system('rosrun baxter_tools camera_control.py -o left_hand_camera -r 1280x800')
 
 
 def move(msg):
@@ -24,6 +25,7 @@ def move(msg):
         print("[ERROR]: Invalid message received")
         return
     print("Received command for %d items", len(items))
+    os.system('rosrun baxter_tools tuck_arms.py -u')
 
     # Pick up objects starting from the rightmost (y) + closest (x)
     processed = sorted(zip(items, transforms), key=lambda x:(x[1].transform.translation.y, x[1].transform.translation.x))
@@ -42,9 +44,9 @@ def move(msg):
         obj = None
         if obj_id == 1:
             if y < -0.16:
-                obj = Plate(x, y, gripper, planner, True)
-            else:
                 obj = Plate(x, y, gripper, planner, False)
+            else:
+                obj = Plate(x, y, gripper, planner, True)
         if obj_id == 2:
             orient = [tr.transform.rotation.x, tr.transform.rotation.y, tr.transform.rotation.z, tr.transform.rotation.w]
             obj = Spoon(x, y, gripper, planner)#, orient) # optionally, provide spoon orientation?
@@ -52,12 +54,12 @@ def move(msg):
             obj = Cup(x, y, gripper, planner)
 
         if obj:
-            os.system('rosrun baxter_tools tuck_arms.py -u')
+            #os.system('rosrun baxter_tools tuck_arms.py -u')
             gripper.calibrate()
             gripper.close()
 
             print("Planning for:", obj_id, x, y)
-            raw_input('Press [ Enter ]: ')
+            #raw_input('Press [ Enter ]: ')
             try:
                 obj.perform_actions()
             except Exception as e:

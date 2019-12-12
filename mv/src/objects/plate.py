@@ -8,20 +8,24 @@ class Plate(object):
         self.gripper, self.planner = gripper, planner
   
         offset, gripper_correction = 0.025, 0.04
-        self.radius = 0.05
+        self.radius = 0.07
 
         self.coord_x, self.coord_y = x + gripper_correction, y + gripper_correction
         self.hover_z, self.pickup_z = -0.22, -0.309
-        self.hover_x = x - (self.radius + offset) / np.sqrt(2)
-        self.pickup_x = x - self.radius / np.sqrt(2)
-        self.hover_y = y - (self.radius + offset) / np.sqrt(2)
-        self.pickup_y = y - self.radius / np.sqrt(2)
 
         if threshold:
             self.orient = np.array([0.5325, 0.6319, 0.411, 0.3847])
+            self.hover_x = x - (self.radius + offset)
+            self.pickup_x = x - self.radius
+            self.hover_y = self.coord_y
+            self.pickup_y = self.coord_y
         else:
             self.orient = np.array([0.22, 0.781, 0.555, 0.179])
-        self.orient /= np.linalg.norm(self.orient)
+            self.orient /= np.linalg.norm(self.orient)
+            self.hover_x = x - (self.radius + offset) / np.sqrt(2)
+            self.pickup_x = x - self.radius / np.sqrt(2)
+            self.hover_y = y - (self.radius + offset) / np.sqrt(2)
+            self.pickup_y = y - self.radius / np.sqrt(2)
 
         self.final_x, self.final_y, self.final_z = self.coord_x, self.coord_y, 0.0 # SET THIS ACCORDINGLY
 

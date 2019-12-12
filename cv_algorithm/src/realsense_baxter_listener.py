@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	realsense_to_ar = None
 	while realsense_to_ar == None:
 		try:
-			realsense_to_ar = tfBuffer.lookup_transform("ar_marker_6", "camera_depth_optical_frame", rospy.Time())
+			realsense_to_ar = tfBuffer.lookup_transform("ar_marker_5", "camera_depth_optical_frame", rospy.Time())
 			#print(dir(realsense_to_ar))
 			print("Got Realsense Position!")
 		except:
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 	baxter_to_ar = None
 	while baxter_to_ar == None:
 		try:
-			baxter_to_ar = tfBuffer.lookup_transform("ar_marker_6", "base", rospy.Time())
+			baxter_to_ar = tfBuffer.lookup_transform("ar_marker_5", "base", rospy.Time())
 			print("Got the Baxter position!")
 		except:
 			print("[ERROR]: Could not get Baxter position")
