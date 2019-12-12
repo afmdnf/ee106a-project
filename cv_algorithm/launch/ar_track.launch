@@ -1,5 +1,5 @@
 <launch>
-	<arg name="marker_size"          default="16.5" />
+    <arg name="marker_size"          default="16.5" />
     <arg name="max_new_marker_error" default="0.05" />
     <arg name="max_track_error"      default="0.05" />
 
@@ -12,22 +12,22 @@
     <arg name="output_frame2"         default="right_hand_camera" />
 
     <node name="ar_track_alvar_realsense" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen">
-		<param name="marker_size"           type="double" value="$(arg marker_size)" />
-		<param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)" />
-		<param name="max_track_error"       type="double" value="$(arg max_track_error)" />
-		<param name="output_frame"          type="string" value="$(arg output_frame1)" />
+        <param name="marker_size"           type="double" value="$(arg marker_size)" />
+        <param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)" />
+        <param name="max_track_error"       type="double" value="$(arg max_track_error)" />
+        <param name="output_frame"          type="string" value="$(arg output_frame1)" />
 
-		<remap from="camera_image"  to="$(arg cam_image_topic1)" />
-		<remap from="camera_info"   to="$(arg cam_info_topic1)" />
-	</node>
+        <remap from="camera_image"  to="$(arg cam_image_topic1)" />
+        <remap from="camera_info"   to="$(arg cam_info_topic1)" />
+    </node>
 
     <node name="ar_track_alvar_baxter" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen">
-		<param name="marker_size"           type="double" value="$(arg marker_size)" />
-		<param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)" />
-		<param name="max_track_error"       type="double" value="$(arg max_track_error)" />
-		<param name="output_frame"          type="string" value="$(arg output_frame2)" />
+        <param name="marker_size"           type="double" value="$(arg marker_size)" />
+        <param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)" />
+        <param name="max_track_error"       type="double" value="$(arg max_track_error)" />
+        <param name="output_frame"          type="string" value="$(arg output_frame2)" />
 
-		<remap from="camera_image"  to="$(arg cam_image_topic2)" />
-		<remap from="camera_info"   to="$(arg cam_info_topic2)" />
-	</node>
+        <remap from="camera_image"  to="$(arg cam_image_topic2)" />
+        <remap from="camera_info"   to="$(arg cam_info_topic2)" />
+    </node>
 </launch>

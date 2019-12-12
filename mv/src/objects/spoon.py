@@ -19,47 +19,33 @@ class Spoon(object):
     def perform_actions(self):
         camera_move_ahead = 0.05
         request1 = self.planner.construct_plan([self.coord_x + camera_move_ahead, self.coord_y, self.hover_z], self.orient)
-        self.execute(request1)
-        # if not self.planner.execute_plan(request1):
-        #     raise Exception("Execution failed 1")
-        # while (not self.gripper.open()):
-        #     continue
-        self.gripper.open()
-        rospy.sleep(1.0)
+        self.planner.execute_plan(request1)
 
         corr_x, corr_y = get_correction("spoon")
         self.coord_x -= (corr_x - camera_move_ahead)
         self.coord_y -= corr_y
 
         request1 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
-        self.execute(request1)
-        # if not self.planner.execute_plan(request1):
-        #     raise Exception("Execution failed 2")
+        self.planner.execute_plan(request1)
+        # while not self.gripper.open():
+        #     continue
+        self.gripper.open()
+        rospy.sleep(1.0)
 
         request2 = self.planner.waypoint_plan([self.coord_x, self.coord_y, self.pickup_z], self.orient)
-        self.execute(request2)
-        # if not self.planner.execute_plan(request2):
-        #     raise Exception("Execution failed 3")
+        self.planner.execute_plan(request2)
         rospy.sleep(1.0)
         self.gripper.set_velocity(10.0)
-        while (self.gripper_state > 10): # self.gripper.command_position(5.0)
+        while self.gripper_state > 10: # self.gripper.command_position(5.0)
             self.gripper.close()
         self.gripper.set_velocity(50.0) # back to default
-        rospy.sleep(1.0)
 
         request3 = self.planner.construct_plan([self.final_x, self.final_y, self.final_z], self.orient)
-        self.execute(request3)
-        # if not self.planner.execute_plan(request3):
-        #     raise Exception("Execution failed 4")
+        self.planner.execute_plan(request3)
         rospy.sleep(1.0)
-        self.gripper.open()
-        # while (not self.gripper.open()):
+        # while not self.gripper.open():
         #     continue
-        rospy.sleep(1.0)
-
-    def execute(self, request):
-        while(not self.planner.execute_plan(request)):
-            continue
+        self.gripper.open()
 
     def record_state(self, state):
         self.gripper_state = state.position

@@ -12,11 +12,11 @@ from objects.spoon import Spoon
 
 from mv.msg import Pickup
 
+os.system('rosrun baxter_tools camera_control.py -o left_hand_camera -r 1280x800')
 rospy.init_node('obj_mover', anonymous=True)
 arm = "right"
 planner = PathPlanner(arm + "_arm")
 gripper = baxter_gripper.Gripper(arm)
-os.system('rosrun baxter_tools camera_control.py -o left_hand_camera -r 1280x800')
 
 
 def move(msg):
@@ -24,15 +24,15 @@ def move(msg):
     if not transforms or len(items) != len(transforms):
         print("[ERROR]: Invalid message received")
         return
-    print("Received command for %d items", len(items))
+    print("Received command for %d items" % len(items))
     os.system('rosrun baxter_tools tuck_arms.py -u')
 
-    # Pick up objects starting from the rightmost (y) + closest (x)
-    processed = sorted(zip(items, transforms), key=lambda x:(x[1].transform.translation.y, x[1].transform.translation.x))
+    # Pick up objects starting from cup and then rightmost (y) + closest (x)
+    processed = sorted(zip(items, transforms), key=lambda x:(-x[0], x[1].transform.translation.y, x[1].transform.translation.x))
     for item, tr in processed:
         obj_id = int(item)
         if obj_id not in [1, 2, 3]:
-            print("[ERROR]: Invalid object %d at index %d", obj_id, i)
+            print("[ERROR]: Invalid object %d at index %d" % (obj_id, i))
             continue
 
         x, y = tr.transform.translation.x, tr.transform.translation.y
@@ -49,6 +49,7 @@ def move(msg):
                 obj = Plate(x, y, gripper, planner, True)
         if obj_id == 2:
             orient = [tr.transform.rotation.x, tr.transform.rotation.y, tr.transform.rotation.z, tr.transform.rotation.w]
+            print("SPOON ORIENTATION:", orient)
             obj = Spoon(x, y, gripper, planner)#, orient) # optionally, provide spoon orientation?
         elif obj_id == 3:
             obj = Cup(x, y, gripper, planner)
@@ -65,7 +66,7 @@ def move(msg):
             except Exception as e:
                 print e
         else:
-            print("[ERROR]: Invalid object %d at index %d", obj_id, i)
+            print("[ERROR]: Invalid object %d at index %d" % (obj_id, i))
 
 
 if __name__ == '__main__':

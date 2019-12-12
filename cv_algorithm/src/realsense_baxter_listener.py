@@ -49,7 +49,7 @@ if __name__ == '__main__':
 			#print(dir(realsense_to_ar))
 			print("Got Realsense Position!")
 		except:
-			print("[ERROR]: Could not get Realsense position")
+			pass
 
 
 	baxter_to_ar = None
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 			baxter_to_ar = tfBuffer.lookup_transform("ar_marker_5", "base", rospy.Time())
 			print("Got the Baxter position!")
 		except:
-			print("[ERROR]: Could not get Baxter position")
+			pass
 
 	trans_vec_1 = np.array([realsense_to_ar.transform.translation.x,realsense_to_ar.transform.translation.y,realsense_to_ar.transform.translation.z,1])
 	trans_vec_2 = np.array([baxter_to_ar.transform.translation.x,baxter_to_ar.transform.translation.y,baxter_to_ar.transform.translation.z,1])

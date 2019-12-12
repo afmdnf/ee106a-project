@@ -121,12 +121,14 @@ class PathPlanner(object):
         Inputs:
         plan: a moveit_msgs/RobotTrajectory plan
         """
-        res = self._group.execute(plan, wait=True)
+        tries = 0
+        while tries < 10 and not self._group.execute(plan, wait=True):
+            tries += 1
         self._group.stop()
         self._group.clear_pose_targets()
         self._group.clear_path_constraints()
-        return res
-
+        if tries == 10:
+            raise Exception("[ERROR] Tried 10x but could not execute plan")
 
     def add_box_obstacle(self, size, name, pose):
         """

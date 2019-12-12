@@ -34,11 +34,11 @@ class ImgCapture:
                 area = cv2.contourArea(c)
                 #if area: print(area)
                 if area > 5000 and area < 8000 and self.obj == "spoon":
-                    mask = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness = -1)
+                    mask = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness=-1)
                     # plt.imshow(mask, cmap='gray')
                     # plt.show()
                 elif area >= 15000 and area < 80000 and self.obj == "cup":
-                    mask = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness = -1)
+                    mask = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness=-1)
                     # plt.imshow(mask, cmap='gray')
                     # plt.show()
 
@@ -55,8 +55,6 @@ class ImgCapture:
             # print("img_centre:", img_center_x, img_center_y)
 
             self.corr_x, self.corr_y = (img_center_x - center_x)*pixels_to_dist, (img_center_y - center_y)*pixels_to_dist
-            # plt.imshow(mask, cmap='gray')
-            # plt.show()
         except CvBridgeError as e:
             print(e)
         self.skImg.unregister()
