@@ -15,7 +15,7 @@ from objects.spoon import Spoon
 from mv.msg import Pickup
 
 
-os.system('rosrun baxter_tools camera_control.py -o left_hand_camera -r 1280x800')
+os.system('rosrun baxter_tools camera_control.py -o right_hand_camera -r 1280x800')
 rospy.init_node('obj_mover', anonymous=True)
 arm = "right"
 planner = PathPlanner(arm + "_arm")
@@ -48,13 +48,13 @@ def move(msg):
 
         obj = None
         if obj_id == 1:
-            if y < -0.16:
-                obj = Plate(x, y, gripper, planner, False)
-            else:
-                obj = Plate(x, y, gripper, planner, True)
+            # if y < -0.16:
+            #     obj = Plate(x, y, gripper, planner, False)
+            # else:
+            obj = Plate(x, y, gripper, planner, True)
         if obj_id == 2:
             orient = [tr.transform.rotation.x, tr.transform.rotation.y, tr.transform.rotation.z, tr.transform.rotation.w]
-            print("SPOON ORIENTATION:", orient)
+            #print("SPOON ORIENTATION:", orient)
             obj = Spoon(x, y, gripper, planner)#, orient) # optionally, provide spoon orientation?
         elif obj_id == 3:
             obj = Cup(x, y, gripper, planner)
@@ -78,6 +78,7 @@ def tuck():
         os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
     os.system('rosrun baxter_tools tuck_arms.py -u')
     pro = subprocess.Popen("rosrun baxter_interface joint_trajectory_action_server.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+    rospy.sleep(1.0)
 
 
 if __name__ == '__main__':

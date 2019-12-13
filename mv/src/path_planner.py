@@ -100,7 +100,7 @@ class PathPlanner(object):
     def construct_plan(self, position, orientation, constraints=[]):
         goal = PoseStamped()
         goal.header.frame_id = "base"
-        goal.pose.position.x, goal.pose.position.y, goal.pose.position.z = position[0], position[1], position[2]
+        goal.pose.position.x, goal.pose.position.y, goal.pose.position.z = round(position[0], 3), round(position[1], 3), round(position[2], 3)
         goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w = orientation[0], orientation[1], orientation[2], orientation[3]
 
         plan = self.plan_to_pose(goal, constraints)
@@ -110,7 +110,7 @@ class PathPlanner(object):
 
     def waypoint_plan(self, position, orientation):
         wpose = Pose()
-        wpose.position.x, wpose.position.y, wpose.position.z = position[0], position[1], position[2]
+        wpose.position.x, wpose.position.y, wpose.position.z = round(position[0], 3), round(position[1], 3), round(position[2], 3)
         wpose.orientation.x, wpose.orientation.y, wpose.orientation.z, wpose.orientation.w = orientation[0], orientation[1], orientation[2], orientation[3]
         return self._group.compute_cartesian_path([wpose], eef_step=0.01, jump_threshold=0.0)[0]
 
@@ -122,13 +122,13 @@ class PathPlanner(object):
         plan: a moveit_msgs/RobotTrajectory plan
         """
         tries = 0
-        while tries < 10 and not self._group.execute(plan, wait=True):
+        while tries < 25 and not self._group.execute(plan, wait=True):
             tries += 1
         self._group.stop()
         self._group.clear_pose_targets()
         self._group.clear_path_constraints()
-        if tries == 10:
-            raise Exception("[ERROR] Tried 10x but could not execute plan")
+        if tries == 25:
+            raise Exception("[ERROR] Tried 25x but could not execute plan")
 
     def add_box_obstacle(self, size, name, pose):
         """

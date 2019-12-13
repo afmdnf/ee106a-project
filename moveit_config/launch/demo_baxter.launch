@@ -38,6 +38,6 @@
        Therefore, this functionality is disabled by default. For more info:
        https://github.com/ros-planning/moveit/issues/123
   -->
-  <!-- <include file="$(find baxter_moveit_config)/launch/default_warehouse_db.launch" /> -->
+  <!-- <include file="$(find moveit_config)/launch/default_warehouse_db.launch" /> -->
 
 </launch>

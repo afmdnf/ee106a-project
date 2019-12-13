@@ -1,5 +1,5 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package baxter_moveit_config
+Changelog for package moveit_config
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1.1.1 (2017-11-26)
@@ -10,7 +10,7 @@ Changelog for package baxter_moveit_config
 1.1.0 (2016-11-15)
 ------------------
 * [capability] Add option from Setup Assistant into old Baxter moveit config
-* [capability] Add option not to launch db in baxter_moveit_config
+* [capability] Add option not to launch db in moveit_config
 * Contributors: Dave Coleman, Kentaro Wada
 
 1.0.6 (2016-04-19)

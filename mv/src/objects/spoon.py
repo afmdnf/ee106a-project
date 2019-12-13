@@ -11,7 +11,7 @@ class Spoon(object):
         self.coord_x, self.coord_y = x, y
         self.gripper, self.planner = gripper, planner
         self.hover_z, self.pickup_z = -0.24, -0.355 #OLD TABLE
-        self.hover_z, self.pickup_z = -0.131, -0.246
+        #self.hover_z, self.pickup_z = -0.131, -0.246
         self.orient = orientation
         self.gripper_state = 100.0
 
@@ -35,21 +35,22 @@ class Spoon(object):
 
         request2 = self.planner.waypoint_plan([self.coord_x, self.coord_y, self.pickup_z], self.orient)
         self.planner.execute_plan(request2)
+        #rospy.sleep(1.0)
+        #self.gripper.set_velocity(10.0)
+        #while self.gripper_state > 90: # self.gripper.command_position(5.0)
+        self.gripper.close()
+        #self.gripper.set_velocity(50.0) # back to default
         rospy.sleep(1.0)
-        self.gripper.set_velocity(10.0)
-        while self.gripper_state > 90: # self.gripper.command_position(5.0)
-            self.gripper.close()
-        self.gripper.set_velocity(50.0) # back to default
 
         request3 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
         self.planner.execute_plan(request3)
-        rospy.sleep(1.0)
+        #rospy.sleep(1.0)
 
         request4 = self.planner.construct_plan([self.final_x, self.final_y, self.final_z], self.orient)
         self.planner.execute_plan(request4)
-        rospy.sleep(1.0)
-        while self.gripper_state < 50:
-            self.gripper.open()
+        #rospy.sleep(1.0)
+        #while self.gripper_state < 50:
+        self.gripper.open()
 
     def record_state(self, state):
         self.gripper_state = state.position

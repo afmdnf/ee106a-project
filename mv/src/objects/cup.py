@@ -10,7 +10,7 @@ class Cup(object):
 
         self.radius = 0.03
         self.hover_z, self.pickup_z = -0.12, -0.296 # OLD TABLE
-        self.hover_z, self.pickup_z = 0.011, -0.187
+        #self.hover_z, self.pickup_z = 0.011, -0.187
         self.pickup_y = self.coord_y + self.radius
         self.orient = [0.0, 1.0, 0.0, 0.0]
 
@@ -28,7 +28,7 @@ class Cup(object):
 
         request1 = self.planner.construct_plan([self.coord_x, self.coord_y, self.hover_z], self.orient)
         self.planner.execute_plan(request1)
-        rospy.sleep(1.0)
+        #rospy.sleep(1.0)
 
         request2 = self.planner.waypoint_plan([self.coord_x, self.pickup_y, self.hover_z], self.orient)
         self.planner.execute_plan(request2)
@@ -42,9 +42,9 @@ class Cup(object):
 
         request4 = self.planner.waypoint_plan([self.coord_x, self.pickup_y, self.hover_z], self.orient)
         self.planner.execute_plan(request4)
-        rospy.sleep(1.0)
+        #rospy.sleep(1.0)
 
         request5 = self.planner.construct_plan([self.final_x, self.final_y, self.final_z], self.orient)
         self.planner.execute_plan(request5)
-        rospy.sleep(1.0)
         self.gripper.open()
+        rospy.sleep(1.0)

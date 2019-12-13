@@ -18,8 +18,9 @@ os.system('rosrun baxter_tools tuck_arms.py -u')
 gripper.calibrate()
 gripper.close()
 
-x, y = 0.5, -0.5
+x, y = 0.5, -0.4
 obj = Plate(x, y, gripper, planner, True) # Thresholding is ON
+#obj = Spoon(x, y, gripper, planner)
 
 try:
     obj.perform_actions()
