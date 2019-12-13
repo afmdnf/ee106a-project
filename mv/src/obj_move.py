@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import rospy
 import os
+import signal
+import subprocess
 
 from baxter_interface import gripper as baxter_gripper
 #from moveit_msgs.msg import OrientationConstraint
@@ -12,12 +14,15 @@ from objects.spoon import Spoon
 
 from mv.msg import Pickup
 
+
 os.system('rosrun baxter_tools camera_control.py -o left_hand_camera -r 1280x800')
 rospy.init_node('obj_mover', anonymous=True)
 arm = "right"
 planner = PathPlanner(arm + "_arm")
 gripper = baxter_gripper.Gripper(arm)
+gripper.calibrate()
 
+pro = None
 
 def move(msg):
     items, transforms = msg.items, msg.transforms
@@ -25,7 +30,7 @@ def move(msg):
         print("[ERROR]: Invalid message received")
         return
     print("Received command for %d items" % len(items))
-    os.system('rosrun baxter_tools tuck_arms.py -u')
+    #os.system('rosrun baxter_tools tuck_arms.py -u')
 
     # Pick up objects starting from cup and then rightmost (y) + closest (x)
     processed = sorted(zip(items, transforms), key=lambda x:(-x[0], x[1].transform.translation.y, x[1].transform.translation.x))
@@ -55,8 +60,7 @@ def move(msg):
             obj = Cup(x, y, gripper, planner)
 
         if obj:
-            #os.system('rosrun baxter_tools tuck_arms.py -u')
-            gripper.calibrate()
+            tuck()
             gripper.close()
 
             print("Planning for:", obj_id, x, y)
@@ -68,9 +72,16 @@ def move(msg):
         else:
             print("[ERROR]: Invalid object %d at index %d" % (obj_id, i))
 
+def tuck():
+    global pro
+    if pro:
+        os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
+    os.system('rosrun baxter_tools tuck_arms.py -u')
+    pro = subprocess.Popen("rosrun baxter_interface joint_trajectory_action_server.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+
 
 if __name__ == '__main__':
-    rospy.Subscriber("objects", Pickup, move)
+    rospy.Subscriber("objects", Pickup, move, queue_size=1)
     rospy.spin()
 
 

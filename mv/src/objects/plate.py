@@ -8,10 +8,11 @@ class Plate(object):
         self.gripper, self.planner = gripper, planner
   
         offset, gripper_correction = 0.025, 0.04
-        self.radius = 0.07
+        self.radius = 0.05
 
         self.coord_x, self.coord_y = x + gripper_correction, y + gripper_correction
-        self.hover_z, self.pickup_z = -0.22, -0.309
+        self.hover_z, self.pickup_z = -0.22, -0.309 # OLD TABLE
+        self.hover_z, self.pickup_z = -0.095, -0.184
 
         if threshold:
             self.orient = np.array([0.5325, 0.6319, 0.411, 0.3847])

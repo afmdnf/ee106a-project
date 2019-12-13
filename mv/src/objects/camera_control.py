@@ -19,7 +19,7 @@ class ImgCapture:
     def callback(self, data):
         try:
             img = CvBridge().imgmsg_to_cv2(data, "bgr8")
-            cv2.imwrite("hand.png", img)
+            #cv2.imwrite("hand.png", img)
 
             masked_img = np.copy(img)
             masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2HSV)
@@ -29,26 +29,35 @@ class ImgCapture:
             mask = mask / 255
 
             blank = np.zeros(mask.shape)
+            masks = []
             contours, _ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2:]
             for c in contours:
                 area = cv2.contourArea(c)
                 #if area: print(area)
-                if area > 5000 and area < 8000 and self.obj == "spoon":
+                if area > 5000 and area < 12000 and self.obj == "spoon":
                     mask = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness=-1)
+                    masks.append(mask)
                     # plt.imshow(mask, cmap='gray')
                     # plt.show()
-                elif area >= 15000 and area < 80000 and self.obj == "cup":
+                elif area >= 15000 and area < 30000 and self.obj == "cup":
                     mask = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness=-1)
+                    masks.append(mask)
                     # plt.imshow(mask, cmap='gray')
                     # plt.show()
 
-            x_vals, y_vals = [], []
-            for x in range(len(mask)):
-                for y in range(len(mask[0])):
-                    if mask[x][y]:
-                        x_vals.append(x)
-                        y_vals.append(y)
-            img_center_x, img_center_y = np.mean(x_vals), np.mean(y_vals)
+            centers = []
+            for mask in masks:
+                lolol = np.argwhere(mask > 0)
+                # x_vals, y_vals = [], []
+                # for x in range(len(mask)):
+                #     for y in range(len(mask[0])):
+                #         if mask[x][y]:
+                #             x_vals.append(x)
+                #             y_vals.append(y)
+                # centers.append((np.mean(x_vals), np.mean(y_vals)))
+                # print(centers[-1])
+                centers.append(np.mean(lolol, axis=0))
+            img_center_x, img_center_y = min(centers, key=lambda x:((x[0] - (center_x + 64.0))**2 + (x[1] - center_y)**2))
 
             # print("x_vals:", min(x_vals), max(x_vals))
             # print("y_vals:", min(y_vals), max(y_vals))

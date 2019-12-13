@@ -19,8 +19,7 @@ gripper.calibrate()
 gripper.close()
 
 x, y = 0.5, -0.5
-# obj = Plate(x, y, gripper, planner, True) # Thresholding is ON
-obj = Cup(x, y, gripper, planner)
+obj = Plate(x, y, gripper, planner, True) # Thresholding is ON
 
 try:
     obj.perform_actions()

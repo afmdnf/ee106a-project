@@ -222,7 +222,7 @@ def segment_image(img):
     masked_img = np.copy(img)
     masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2HSV)
 
-    mask1 = cv2.inRange(masked_img, (0, 0, 200), (255, 100, 255))#Old values: 0,150,100 and 255,255,255
+    mask1 = cv2.inRange(masked_img, (0, 0, 150), (255, 100, 255))#Old values: 0,150,100 and 255,255,255
     #mask2 = cv2.inRange(masked_img, (0, 150, 50), (255, 255, 255))
     #mask = cv2.bitwise_or(mask1, mask2)
     mask = mask1 / 255 #used to be mask/255
@@ -230,7 +230,7 @@ def segment_image(img):
     blank = np.zeros(mask.shape)
     masks = []
     for c in contours:
-        if cv2.contourArea(c) < 1000:
+        if cv2.contourArea(c) < 500:
             continue
         else:
             filledContour = cv2.drawContours(np.copy(blank), [c], -1, (255, 255, 255), thickness = -1)
