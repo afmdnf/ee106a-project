@@ -4,7 +4,7 @@ import numpy as np
 
 class Plate(object):
 
-    def __init__(self, x, y, gripper, planner, threshold):
+    def __init__(self, x, y, gripper, planner):
         self.gripper, self.planner = gripper, planner
   
         offset, gripper_correction = 0.075, 0.04
@@ -14,18 +14,11 @@ class Plate(object):
         self.hover_z, self.pickup_z = -0.22, -0.309 # OLD TABLE
         #self.hover_z, self.pickup_z = -0.095, -0.184
 
-        if threshold:
-            self.orient = np.array([0.5325, 0.6319, 0.411, 0.3847])
-            self.hover_x = x - (self.radius + offset)
-            self.pickup_x = x# - self.radius
-            self.hover_y = self.coord_y
-            self.pickup_y = self.coord_y
-        else:
-            self.orient = np.array([0.22, 0.781, 0.555, 0.179])
-            self.hover_x = x - (self.radius + offset) / np.sqrt(2)
-            self.pickup_x = x - self.radius / np.sqrt(2)
-            self.hover_y = y - (self.radius + offset) / np.sqrt(2)
-            self.pickup_y = y - self.radius / np.sqrt(2)
+        self.orient = np.array([0.5325, 0.6319, 0.411, 0.3847])
+        self.hover_x = x - (self.radius + offset)
+        self.pickup_x = x
+        self.hover_y = self.coord_y
+        self.pickup_y = self.coord_y
 
         self.orient /= np.linalg.norm(self.orient)
         self.final_x, self.final_y, self.final_z = -0.08, -0.9, 0.0 # SET THIS ACCORDINGLY

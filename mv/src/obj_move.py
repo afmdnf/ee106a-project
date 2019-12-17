@@ -48,10 +48,7 @@ def move(msg):
 
         obj = None
         if obj_id == 1:
-            # if y < -0.16:
-            #     obj = Plate(x, y, gripper, planner, False)
-            # else:
-            obj = Plate(x, y, gripper, planner, True)
+            obj = Plate(x, y, gripper, planner)
         if obj_id == 2:
             orient = [tr.transform.rotation.x, tr.transform.rotation.y, tr.transform.rotation.z, tr.transform.rotation.w]
             #print("SPOON ORIENTATION:", orient)

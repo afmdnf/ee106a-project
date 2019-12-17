@@ -19,7 +19,7 @@ gripper.calibrate()
 gripper.close()
 
 x, y = 0.5, -0.4
-obj = Plate(x, y, gripper, planner, True) # Thresholding is ON
+obj = Plate(x, y, gripper, planner)
 #obj = Spoon(x, y, gripper, planner)
 
 try:
