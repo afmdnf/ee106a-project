@@ -4,16 +4,21 @@ order: 0
 
 # Introduction
 
-![Rover](/assets/images/rover1.png)
+![Workspace Setup](/assets/setup_images/setup_1a.png)
 
-## Abstract
+## Goal
 
-Our original end goal was to create a robot with an arm that can locate and retrieve a specific object from among a selection of a few different objects. Each object is labeled with a different AR-tag and the user will be able to tell the robot which AR-tag's object to retrieve.
+Our project goal was to identify various kitchenware scattered about a table, classify each object into designated types (such as cups, plates and utensils), and instruct Baxter to pick up each object, manipulate it, and sort it based on its type.
 
 ## Project Description
 
-Our robot uses a camera to read each object’s AR-tag, decide which object the user has asked for and then retrieve it. It is able see and recognize different AR-tags, accurately locate the desired tag and go to the object associated with the tag. Then, using its arm our robot attempts to pick up the object. Our project is interesting because it utilizes computer vision and controls to have the robot locate a desired object and accurately navigate to it. Our robot incorporates sensing through the use of a Kinect camera to see the objects and AR-tags, it incorporates planning by selecting a sequence of movements that navigates the robot to its target, and it incorporates actuation through the use of the robot arm for grabbing the target object and wheels for moving the robot to the target object. Because we built our own robot and hardware from scratch, we had to make our own controls for the motors so that the robot would be able to navigate itself precisely. We also had to figure out how to connect and calibrate our own kinect camera and have the robot react appropriately according to what the camera sees. 
+Our system uses an external RealSense depth camera to obtain pointclouds within the Baxter workspace, isolates only the pointclouds containing kitchenware, classifies each available object based on its unique point distribution, and sends that data to Baxter, which can subsequently execute a series of commands to pick each object up, manipulate it, and then sort it into a designated location within the workspace. Getting this system to work reliably involves tight coordination between several subsystems, each of which requires navigating various interesting problems:
+* Kitchenware within an image must be confidently distinguished from the table behind it, while accounting for noise and visual artifacts.
+* The number of unique objects on the table must be determined quickly and accurately, without computationally-intensive algorithms.
+* Each object must be classified purely based on the shape of its pointcloud, with no other major informative assumptions (such as each object's color).
+* Object types and poses must be constantly communicated to Baxter, since it is constantly and actively manipulating the workspace.
+* The Baxter must be able to use each object's classification to make informed decisions about how to pick it up, what to do with it, and where to take it, while correcting for inevitable error in each object's actual location and orientation.
 
 ## Real-World Applications
 
-Our project was created with the idea of making a robot that can help someone retrieve objects from around their home. There are many people, such as those with disabilities, who have difficulty getting around the house and a robot that could go and retrieve some desired object for the person could help make their lives easier.
+Our project was created with the idea of designing a robot that could manually wash, dry and sort dirty kitchenware when scattered about a table, a task that, if automated, could drastically decrease both time and labor costs, both in the home and in the food service industry. Furthermore, we envision our system extending beyond kitchenware, to a multitude of tasks that could require manual manipulation and organization of objects within a workspace, such as with assembly lines in industrial manufacturing.
