@@ -26,6 +26,7 @@ Our system was developed using the Python API of ROS Kinetic. We included the fo
 * ar_track_alvar: AR tag recognition, needed to localize RealSense to Baxter.
 * moveit: motion planner for Baxter.
 * realsense-ros: ROS interface for the RealSense.
+
 Additionally, we took advantage of a variety of open-source Python libraries for data and image analysis, including numpy/scipy, matplotlib, cv2, and sklearn/skimage.
 
 ### Software We Wrote
