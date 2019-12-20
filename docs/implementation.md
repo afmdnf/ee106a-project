@@ -32,7 +32,12 @@ Additionally, we took advantage of a variety of open-source Python libraries for
 
 *TODO: Finish these sections, add flow diagrams*
 
+![actuation_flow1](/assets/charts/actuation_flow1.png)
+![actuation_flow2](/assets/charts/actuation_flow2.png)
+
 We rely on MoveIt for path planning, using a combination of the `BKPIECE` algorithm for longer maneuvers and Cartesian waypoint planning for short paths (wrapper code in `mv/src/path_planner.py`). The transformed coordinates from the RealSense, in the form of `Pickup.msg`, are utilized to navigate the Baxter gripper to an approximate location of the utensil. From there, the visual servo takes over, with the goal of correcting the coordinates for precise pickup. This was necessary because of the consistent errors of about 2-4 cm arising from the vision pipeline, which would adversely affect our object pickup reliability if not corrected.
+
+![correction](/assets/wrist_vision/correction.png)
 
 The visual servo, defined in `mv/src/objects/camera_control.py`, uses Baxter’s right_hand_camera to take an image, isolate the object of interest using image segmentation and contour detection, and compute the offset from the centre of the object to the gripper position in terms of pixels. This offset is then scaled to convert to actual distances and the exact coordinates of the centre of the object is obtained. Cartesian waypoints are used to direct the gripper to the computed coordinates and initiate the pickup sequence.
 
