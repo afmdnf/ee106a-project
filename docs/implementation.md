@@ -16,16 +16,21 @@ Two-armed robot with parallel-jaw electric gripper attachment. (Provided in lab.
 ### Intel RealSense Camera
 
 Capable of RBG image stream, IR point cloud mapping, and depth sensing. (Provided in lab.)
-
 [Datasheet](https://www.intel.com/content/dam/support/us/en/documents/emerging-technologies/intel-realsense-technology/Intel-RealSense-D400-Series-Datasheet.pdf)
 
 ## Software
 
-### Software We Downloaded
+### Building Blocks
 
-To make our robot functional, we had to work with a variety of software. First, we had to install ROS kinetic on the robot's Raspberry Pi, so that we could work with ROS packages. For debugging purposes, we also decided to set up a laptop with RVIZ. We configured the laptop and the Pi so that the laptop could see the ROS topics being published on the pi, and visualize them in RVIZ. We also configured the laptop to be able to SSH into the Pi so that it was easier to make small changes to files on the Pi. The open source ROS packages we used were freenect_stack,  libfreenect,  rgbd_launch, and ar_track_alvar. We used freenect_stack, libfreenect, and rgbd_launch to make the Xbox 360 Kinect function properly in ROS, and Ar_track_alvar for AR tag recognition. We also downloaded a python file called PiMotor, which is used to send input values to the robots wheel motors so the robot can move.
+Our system was developed using the Python API of ROS Kinetic. We included the following open-source ROS packages: 
+* ar_track_alvar: AR tag recognition, needed to localize RealSense to Baxter.
+* moveit: motion planner for Baxter.
+* realsense-ros: ROS interface for the RealSense.
+Additionally, we took advantage of a variety of open-source Python libraries for data and image analysis, including numpy/scipy, matplotlib, cv2, and sklearn/skimage.
 
 ### Software We Wrote
+
+*TODO: Finish these sections, add flow diagrams*
 
 To actually drive the robot, we wrote a python script called RoverGoSmooth.py. After starting a roscore and launching the aforementioned packages necessary to run the kinect and AR tracking, RoverGoSmooth.py can be ran in a new terminal to activate the robot. A script will prompt the user for the desired AR-tag destination and then the robot will drive to its target and attempt to grab the object located near that target. RoverGoSmooth.py works by using a tf transform listener to repeatedly look up the most recent transformation to the target AR-tag The robot then uses this information to make a decision about where to drive next, and drives in that direction for a short burst. When the robot is finished driving for that particular step, it pauses for a short time period to allow ar_track_alvar to update its information about the AR-tags. If the tag is not visible when the robot is started, the robot will periodically make small turns in a circle and essentially “search” for the AR-tag. Once the tag is visible, the translation data from the tf transform is used to compute the distance to the tag, as well as an angle that represents how far off center the tag is within the robots current field of view.
 
