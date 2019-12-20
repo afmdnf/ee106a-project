@@ -29,14 +29,21 @@ Our system was developed using the Python API of ROS Kinetic. We included the fo
 Additionally, we took advantage of a variety of open-source Python libraries for data and image analysis, including numpy/scipy, matplotlib, cv2, and sklearn/skimage.
 
 ### Software We Wrote
+*TODO: Finish these sections, add flow diagrams*
+
+#### Custom Message Types
+**Pickup.msg**
+```
+float64[] items
+geometry_msgs/TransformStamped[] transforms
+```
 
 #### Actuation
-![actuation_flow1](/assets/charts/actuation_flow1.png)
-![actuation_flow2](/assets/charts/actuation_flow2.png)
+![actuation_flow](/assets/charts/actuation_flow.png)
 
 We rely on MoveIt for path planning, using a combination of the `BKPIECE` algorithm for longer maneuvers and Cartesian waypoint planning for short paths (wrapper code in `mv/src/path_planner.py`). The transformed coordinates from the RealSense, in the form of `Pickup.msg`, are utilized to navigate the Baxter gripper to an approximate location of the utensil. From there, the visual servo takes over, with the goal of correcting the coordinates for precise pickup. This was necessary because of the consistent errors of about 2-4 cm arising from the vision pipeline, which would adversely affect our object pickup reliability if not corrected.
 
-##### Visual Servo
+**Visual Servo**
 ![correction](/assets/wrist_vision/correction.png)
 The visual servo, defined in `mv/src/objects/camera_control.py`, uses Baxter’s right_hand_camera to take an image, isolate the object of interest using image segmentation and contour detection, and compute the offset from the centre of the object to the gripper position in terms of pixels. This offset is then scaled to convert to actual distances and the exact coordinates of the centre of the object is obtained. Cartesian waypoints are used to direct the gripper to the computed coordinates and initiate the pickup sequence.
 
@@ -45,9 +52,7 @@ Our implementation supports the pickup of cups, spoons/forks and plates. Each su
 
 Once the object has been successfully picked up, it is placed at a particular predefined location, unique for each kind of object (see demo).
 
-
-*TODO: Finish these sections, add flow diagrams*
-
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 To actually drive the robot, we wrote a python script called RoverGoSmooth.py. After starting a roscore and launching the aforementioned packages necessary to run the kinect and AR tracking, RoverGoSmooth.py can be ran in a new terminal to activate the robot. A script will prompt the user for the desired AR-tag destination and then the robot will drive to its target and attempt to grab the object located near that target. RoverGoSmooth.py works by using a tf transform listener to repeatedly look up the most recent transformation to the target AR-tag The robot then uses this information to make a decision about where to drive next, and drives in that direction for a short burst. When the robot is finished driving for that particular step, it pauses for a short time period to allow ar_track_alvar to update its information about the AR-tags. If the tag is not visible when the robot is started, the robot will periodically make small turns in a circle and essentially “search” for the AR-tag. Once the tag is visible, the translation data from the tf transform is used to compute the distance to the tag, as well as an angle that represents how far off center the tag is within the robots current field of view.
 
