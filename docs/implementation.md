@@ -5,17 +5,19 @@ order: 20
 # Implementation
 
 ## Hardware
-![Robot Hardware](/assets/images/robot-hardware.jpg)
+![Baxter](/assets/images/baxter.jpg)
 
-### Baxter Robot
+### Rethink Robotics Baxter
 
-As provided in lab.
+Two-armed robot with parallel-jaw electric gripper attachment. (Provided in lab.)
+[Datasheet](https://www.allied-automation.com/wp-content/uploads/2015/02/Baxter_datasheet_5.13.pdf)
 
+![RealSense](/assets/images/realsense.jpg)
 ### Intel RealSense Camera
 
-Capable of RBG image stream, IR point cloud mapping, and depth sensing.
+Capable of RBG image stream, IR point cloud mapping, and depth sensing. (Provided in lab.)
 
-[Datasheet](https://static.raspberrypi.org/files/product-briefs/Raspberry-Pi-Model-Bplus-Product-Brief.pdf)
+[Datasheet](https://www.intel.com/content/dam/support/us/en/documents/emerging-technologies/intel-realsense-technology/Intel-RealSense-D400-Series-Datasheet.pdf)
 
 ## Software
 
