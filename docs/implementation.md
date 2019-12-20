@@ -8,20 +8,16 @@ order: 20
 ![Baxter](/assets/images/baxter.jpg)
 
 ### Rethink Robotics Baxter
-
 Two-armed robot with parallel-jaw electric gripper attachment. (Provided in lab.)
 [Datasheet](https://www.allied-automation.com/wp-content/uploads/2015/02/Baxter_datasheet_5.13.pdf)
 
 ![RealSense](/assets/images/realsense.jpg)
 ### Intel RealSense Camera
-
 Capable of RBG image stream, IR point cloud mapping, and depth sensing. (Provided in lab.)
 [Datasheet](https://www.intel.com/content/dam/support/us/en/documents/emerging-technologies/intel-realsense-technology/Intel-RealSense-D400-Series-Datasheet.pdf)
 
 ## Software
-
 ### Building Blocks
-
 Our system was developed using the Python API of ROS Kinetic. We included the following open-source ROS packages: 
 * `ar_track_alvar`: AR tag recognition, needed to localize RealSense to Baxter.
 * `moveit`: motion planner for Baxter.
@@ -35,6 +31,17 @@ Additionally, we took advantage of a variety of open-source Python libraries for
 float64[] items
 geometry_msgs/TransformStamped[] transforms
 ```
+
+## System Operation Process
+### Camera Calibration
+To operate our system, we need to first localize the RealSense relative to the Baxter. To do this, we start a tf listener node with `cv_algorithm/realsense_baxter_listener.py`, place a single AR tag in view of both the RealSense and Baxter's right wrist camera, and launch `cv_algorithm/ar_track.launch`. This file initializes two nodes that alternate the AR tag's transform between the RealSense tf tree and the Baxter tf tree. The listener then saves both the RealSense-to-AR transform and the Baxter-to-AR transform, calculates the transform between the `camera_depth_optical_frame` of the RealSense and the `base` frame of the Baxter, and broadcasts this to tf as a static transform, essentially connecting the two trees. From here, the ar_track nodes can be killed, and the AR tag is no longer necessary.
+![calibration](/assets/charts/calibration.png)
+
+### Object Detection
+**TODO**
+
+### Object Classification
+**TODO**
 
 ### Actuation
 ![actuation_flow](/assets/charts/actuation_flow.png)
