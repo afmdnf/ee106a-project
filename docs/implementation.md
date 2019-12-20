@@ -35,7 +35,7 @@ geometry_msgs/TransformStamped[] transforms
 ## System Operation Process
 ### Camera Calibration
 To operate our system, we need to first localize the RealSense relative to the Baxter. To do this, we start a tf listener node with `cv_algorithm/realsense_baxter_listener.py`, place a single AR tag in view of both the RealSense and Baxter's right wrist camera, and launch `cv_algorithm/ar_track.launch`. This file initializes two nodes that alternate the AR tag's transform between the RealSense tf tree and the Baxter tf tree. The listener then saves both the RealSense-to-AR transform and the Baxter-to-AR transform, calculates the transform between the `camera_depth_optical_frame` of the RealSense and the `base` frame of the Baxter, and broadcasts this to tf as a static transform, essentially connecting the two trees. From here, the ar_track nodes can be killed, and the AR tag is no longer necessary.
-![calibration](/assets/charts/calibration.png)
+![calibration](/assets/charts/camera_calibration.png)
 
 ### Object Detection
 **TODO**
