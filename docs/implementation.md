@@ -35,15 +35,24 @@ geometry_msgs/TransformStamped[] transforms
 ## System Operation Process
 ### Camera Calibration
 To operate our system, we need to first localize the RealSense relative to the Baxter. To do this, we start a tf listener node with `cv_algorithm/realsense_baxter_listener.py`, place a single AR tag in view of both the RealSense and Baxter's right wrist camera, and launch `cv_algorithm/ar_track.launch`. This file initializes two nodes that alternate the AR tag's transform between the RealSense tf tree and the Baxter tf tree. The listener then saves both the RealSense-to-AR transform and the Baxter-to-AR transform, calculates the transform between the `camera_depth_optical_frame` of the RealSense and the `base` frame of the Baxter, and broadcasts this to tf as a static transform, essentially connecting the two trees. From here, the ar_track nodes can be killed, and the AR tag is no longer necessary.
-![calibration](/assets/charts/camera_calibration.png)
+![calibration](/assets/charts/camera_calibration.PNG)
 
-### Object Detection
-**TODO**
+### Object Detection and Classification
+Using the RealSense's color camera, we identify areas of the visible workspace that differ in color from the background. For our implementation, since we had white kitchenware on a dark brown/black background, we converted RGB images into the hue-saturation-value (HSV) color space, and placed lower-bound thresholds on saturation and value, to isolate all light-colored pixels in the image. From here, we convert the image into a binary mask, and use OpenCV's contour detection algorithms to find a list of all the contours (outlines) surrounding contiguous white segments of the image. Filtering each contour by its area (to get rid of small areas of noise that made it past thresholding), we end up with a list of major contours, each representing the outline of a single object on the table. Each major contour is used to generate a unique mask for each object. These operations are defined in `segmentation/image_segmentation.py`.
 
-### Object Classification
-**TODO**
+Each object's mask is passed into `segmentation/pointcloud_segmentation.py`, which projects the RealSense's pointcloud data into the frame of the color camera, and isolates only those points corresponding to white pixels of the mask. Each individual pointcloud, representing the points of each object, is passed back into `segmentation/main.py`, in order to classify the object.
 
-### Actuation
+To perform object classification, `segmentation/main.py` runs sklearn's implementation of PCA on each object's pointcloud, in three dimensions. The resulting singular values correspond to the major degrees of variance of each pointcloud:
+* Cups have high variance in all three dimensions, so all of their singular values are relatively large.
+* Plates have high variance in only two dimensions, so their first 2 singular values are large relative to the 3rd.
+* Utensils like forks only have high variance in one dimension, so their first singular value is large relative to the 2nd and 3rd.
+Because of this, we normalize the singular values to the 1st (largest) one, and set simple thresholds to classify the object into one of these three types.
+
+Since the principal components returned by PCA are by definition orthogonal, we can simply use these components as vectors defining the 3D orientation of the object (although this data is only useful for utensils, which cannot be grabbed lengthwise, along PCA1). Combining this with the median point in the pointcloud, which represents an approximate center of mass for the object, we create a pose representing that object's position in space, relative to the `camera_depth_optical_frame`. For each object present in the workspace, we broadcast this transform to tf for visualization in rviz, and append its object type (represented as a float from 0 to 3) and transform to a `PickUp` object (see Custom Message Types), which is then published to the `objects` topic, for use in planning and actuation.
+
+To minimize the effect of noise or motion on the published classification data, we publish the most recent PickUp only if the past 10 classification runs have returned the same number and type of objects. This allows the system to avoid publishing unless the workspace is stable and each object classification is certain.
+
+### Planning and Actuation
 ![actuation_flow](/assets/charts/actuation_flow.png)
 
 We rely on MoveIt for path planning, using a combination of the `BKPIECE` algorithm for longer maneuvers and Cartesian waypoint planning for short paths (wrapper code in `mv/src/path_planner.py`). The transformed coordinates from the RealSense, in the form of `Pickup.msg`, are utilized to navigate the Baxter gripper to an approximate location of the utensil. From there, the visual servo takes over, with the goal of correcting the coordinates for precise pickup. This was necessary because of the consistent errors of about 2-4 cm arising from the vision pipeline, which would adversely affect our object pickup reliability if not corrected.
@@ -58,21 +67,7 @@ Our implementation supports the pickup of cups, spoons/forks and plates. Each su
 
 Once the object has been successfully picked up, it is placed at a particular predefined location, unique for each kind of object (see demo).
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-To actually drive the robot, we wrote a python script called RoverGoSmooth.py. After starting a roscore and launching the aforementioned packages necessary to run the kinect and AR tracking, RoverGoSmooth.py can be ran in a new terminal to activate the robot. A script will prompt the user for the desired AR-tag destination and then the robot will drive to its target and attempt to grab the object located near that target. RoverGoSmooth.py works by using a tf transform listener to repeatedly look up the most recent transformation to the target AR-tag The robot then uses this information to make a decision about where to drive next, and drives in that direction for a short burst. When the robot is finished driving for that particular step, it pauses for a short time period to allow ar_track_alvar to update its information about the AR-tags. If the tag is not visible when the robot is started, the robot will periodically make small turns in a circle and essentially “search” for the AR-tag. Once the tag is visible, the translation data from the tf transform is used to compute the distance to the tag, as well as an angle that represents how far off center the tag is within the robots current field of view.
-
-Transforms are computed relative the the Kinect frame, camera_link. This frame is convenient to use because the x-axis of the frame always points in the same direction as the camera’s lense. The distance is computed via a simple 2 dimensional distance formula (z direction is not relevant for driving in the x-y plane). The angle is simple the angle offset of the target AR-tag relative to the camera_link frames x-axis, where an angle of zero tells the robot that the target is straight ahead. At each driving step, the robot computes this distance and angle and makes a decision. First, the robot checks if the tag is within a given angle tolerance, if it is not, it uses the sign of the computed angle to decide to turn left or right. If the angle is within tolerance, the robot then checks to see if the robot is within a given distance tolerance. If it is not, the robot drives forward. Otherwise the robot will attempt a grab via another python script we wrote, grabBlock.py.
-
-![TF Calculation Diagram](/assets/robot_images/rover_tf_calculation_diagram.jpg)
-
-When the robot is actually moving, it needs to either drive straight or turn accurately. To accomplish this, we implemented a very simple proportional controller that uses photo interrupters to compute approximately how far each wheel has turned. The controller then attempts to adjust the input of one wheel while holding the other input constant so that the two wheels always travel an equal distance so that the robot can drive straight. Note that because the robot drives in short bursts, this controller is mostly a safeguard, as the most important aspect for getting our robot to drive straight was calibrating the initial inputs to the wheels so that it at least starts off driving straight initially. Calibrating these inputs was done simply by trial and error.
-
-We also included some logic that prompts the robot to search for the target again if it loses sight of the tag while driving. The most recent previous known location of the tag is used to attempt to make an accurate choice about which direction to turn in this case. This python script could have been turned into an actual ROS node, but given how it functions we felt that this was unnecessary and overly complicated, so we decided to just keep it as a simple python script. The other script that we wrote, grabBlock.py applies inputs to the robot arm that causes it to reach out in front of the robot and attempt a grab. This code for this script is simply a sequence of hard coded inputs to the arm that causes the robot to attempt to grab whatever is currently in front of it.
-
-![Rover Flow Chart](/assets/robot_images/rover_flow_chart.jpg)
-
-### System Overview
+## System Overview
 
 Overall, our system works by continuously using the Kinect to collect image data. Ar_track_alvar then takes this data and computes which AR tags are visible. Tf then computes the transformations to each of the tags. While this is all happening, RoverGoSmooth.py can be ran with a particular AR tag selection. RoverGoSmooth.py then periodically looks up the transformation to the desired AR tag and makes a decision about which direction to move in. Once the robot is within the desired distance and angle tolerances relative to its desired AR tag, the attempts to grab the object at the AR tag via grabBlock.py
 
