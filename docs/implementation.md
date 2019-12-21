@@ -72,10 +72,10 @@ Our implementation supports the pickup of cups, spoons/forks and plates. Each su
 
 Once the object has been successfully picked up, it is placed at a particular predefined location, unique for each kind of object (see demo).
 
-## System Overview
+## Graphical Overview
 
-Our system requires a calibration stage, where an ar marker is placed on the table in the field of view of both the Realsense camera and the Baxter wrist camera. The ar_track.launch launch file is run to enable ar_marker transform publishing to TF from both camera's ar_track nodes, and the realsense_baxter_listener.py node is run to listen to these transforms. It computes the transform from the Realsense camera to the Baxter Base and continuously publishes this static transform during steady-state operation. 
+To calibrate the camera, we run `ar_track.launch` and `realsense_baxter_listener.py` with both cameras pointed at a common AR tag. When the transform is found and published, we kill `ar_track.launch` and remove the AR marker.
 
-Now the system is ready to classify kitchenware and sort them. The main.py function is run locally,so it starts segmenting pointclouds by color thresholding images in the HSV color space, doing contour detection to separate individual objects, and then for each object, it does PCA on the individual object to classify it. It sends a Pickup.msg message, which contains an array of the types of items and a corresponding array of the center of masses of each item via the objects topic. The main.py function is left running continuously and will update if new items are placed within the Realsense frame. From here, the obj_move.py node is run on Baxter, and it subscribes to the objects topic and receives the Pickup.msg. It attempts to find a plan to pick up the cup first, carries out the motion required to get close enough to get a good picture, and uses visual servoing with the wrist camera to achieve enough precision to pick up the cup. The obj_move.py function is left running continuously as well, so it will keep trying to pick up items as long as Pickup.msg is not empty and will update if new items are added.
+Now the system is ready to identify kitchenware. All of the computer vision subprocesses are run from `main.py`, which is left to run continuously and publish `Pickup` objects to the `objects` topic. From here, `obj_move.py` is run on Baxter, which subscribes to `objects`. When a `Pickup` message is received, this node calls several subprocesses for each object type (`cup.py`, `plate.py`, `spoon.py`, and `camera_control.py`), to handle each object present. This node runs continuously, as long as the state of objects in the workspace continues to be published.
 
-![System Flow Chart](/docs/assets/images/high_level_schematic.jpg)
+![System Flow Chart](/assets/images/high_level_schematic.jpg)
