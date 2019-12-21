@@ -22,10 +22,4 @@ Plate: Since the most stable way to grasp the plate is similar to how a human ha
 
 ## Potential Improvements
 
-We used AR-tags to distinguish the different objects but ideally we would want to program the robot to be able to identify different objects without AR-tags or be able to have it see and recognize smaller tags that we could attach to the objects.
-
-We would also want to find a way to make the AR-tag tracker update and find the tf transformations faster. At the moment, our robot pauses every few seconds in order to find the tag and recalculate the transforms and see how far and at what angle the tag is after the robot has moved so that it will stay on track to get to the target.
-
-Additionally, our robot's arm is hardcoded at the moment to always reach to the same point in front of the robot. Given more time, we would have attempted to implement a program to perform inverse kinematics on the location of the object and the arm's position and we would have also implemented controls on the arm as well so that it would reach towards the object instead of moving to the same spot. 
-
-Finally, we would have liked to make a URDF (Universal Robot Description Format) of our robot in order to use RViz MoveIt Control.
+One major area of improvement which could streamline our entire process would be to implement a new motion controller, since currently we utilize the MoveIt motion planner to calculate the inverse kinematics and trajectory that Baxter will take. Moveit often fails to find a path from the tucked arm position to our calibration position even if the object is clearly within the robot’s workspace. This is a major issue that greatly slows down our organization pipeline from a process that should take roughly 30 seconds to a minute (for 3-4 objects) to one that takes about 3-5 minutes. Although writing a new controller would be very complicated, the potential gain in speed would be well worth it, and since we know the general positions that we want the arm in for each of the object types, we could likely make some simplifying assumptions when designing a controller.
