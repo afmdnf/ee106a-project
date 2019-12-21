@@ -3,7 +3,6 @@ order: 40
 ---
 
 # Conclusion
-
 Our project successfully met our most important goals of being able to identify different types of kitchenware, pick them up, and move them to designated locations based on their classification.  We focused greatly on increasing the reliability of our algorithms before moving onto more advanced goals. Some of these advanced goals included passing the object from Baxter's right hand to its left or placing the object outside the camera field of view instead of dropping the object, both of which we were unable to implement due to time constraints, but hope to continue working on in the future. Although the video in our results section of Baxter picking up the various kitchenware appears on a relatively normal time-scale, the motion-planning steps can take ranging from a few seconds to the order of a few minutes to correctly devise a motion plan. Thus, for demonstration purpose, we cut out frames where the robot is sitting still and planning motion. This is largely a result of using Moveit as our motion planner, and implementing our own more robust planner would be the next aspect of reliability we would choose to focus upon.   
 
 ## Difficulties We Faced
