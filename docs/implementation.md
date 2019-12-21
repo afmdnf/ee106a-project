@@ -35,10 +35,12 @@ geometry_msgs/TransformStamped[] transforms
 ## System Operation Process
 ### Camera Calibration
 To operate our system, we need to first localize the RealSense relative to the Baxter. To do this, we start a tf listener node with `cv_algorithm/realsense_baxter_listener.py`, place a single AR tag in view of both the RealSense and Baxter's right wrist camera, and launch `cv_algorithm/ar_track.launch`. This file initializes two nodes that alternate the AR tag's transform between the RealSense tf tree and the Baxter tf tree. The listener then saves both the RealSense-to-AR transform and the Baxter-to-AR transform, calculates the transform between the `camera_depth_optical_frame` of the RealSense and the `base` frame of the Baxter, and broadcasts this to tf as a static transform, essentially connecting the two trees. From here, the ar_track nodes can be killed, and the AR tag is no longer necessary.
+
 ![calibration](/assets/charts/camera_calibration.PNG)
 
 ### Object Detection and Classification
 Using the RealSense's color camera, we identify areas of the visible workspace that differ in color from the background. For our implementation, since we had white kitchenware on a dark brown/black background, we converted RGB images into the hue-saturation-value (HSV) color space, and placed lower-bound thresholds on saturation and value, to isolate all light-colored pixels in the image. From here, we convert the image into a binary mask, and use OpenCV's contour detection algorithms to find a list of all the contours (outlines) surrounding contiguous white segments of the image. Filtering each contour by its area (to get rid of small areas of noise that made it past thresholding), we end up with a list of major contours, each representing the outline of a single object on the table. Each major contour is used to generate a unique mask for each object. These operations are defined in `segmentation/image_segmentation.py`.
+
 ![contour](/assets/charts/contour_detection.PNG)
 
 Each object's mask is passed into `segmentation/pointcloud_segmentation.py`, which projects the RealSense's pointcloud data into the frame of the color camera, and isolates only those points corresponding to white pixels of the mask. Each individual pointcloud, representing the points of each object, is passed back into `segmentation/main.py`, in order to classify the object.
@@ -50,6 +52,8 @@ To perform object classification, `segmentation/main.py` runs sklearn's implemen
 Because of this, we normalize the singular values to the 1st (largest) one, and set simple thresholds to classify the object into one of these three types.
 
 Since the principal components returned by PCA are by definition orthogonal, we simply use these components as vectors defining the 3D orientation of the object (although this data is only useful for utensils, which cannot be grabbed lengthwise, along PCA1), by converting the component matrix into a normalized quaternion. Combining this with the median point in the pointcloud, which represents an approximate center of mass for the object, we create a pose representing that object's position in space, relative to the `camera_depth_optical_frame`. For each object present in the workspace, we broadcast this transform to tf for visualization in rviz, and append its object type (represented as a float from 0 to 3) and transform to a `Pickup` object (see Custom Message Types), which is then published to the `objects` topic, for use in planning and actuation.
+
+![rviz_setup](/assets/charts/rviz_setup.PNG)
 
 To minimize the effect of noise or motion on the published classification data, we publish the most recent Pickup only if the past 10 classification runs have returned the same number and type of objects. This allows the system to avoid publishing unless the workspace is stable and each object classification is certain.
 
