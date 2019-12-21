@@ -6,7 +6,9 @@ order: 50
 
 ## Naser Abdelrahman
 
-**TODO: Naser**
+Naser is a graduating third-year BioE undergraduate student concentrating in medical devices. He is particularly passionate about automation and robotics. Naser has taken numerous signals and systems classes including BioE 105, BioE 101, and BioE C145B and has extended experience designing CAD models and fabricating assemblies.
+
+Naser worked with Mohammed on the grasping and actuation aspect of the project, including processing the transforms from the vision team for path planning, visual servo and ensuring object pickup reliability.
 
 ## Fayyaz Ahamed
 
