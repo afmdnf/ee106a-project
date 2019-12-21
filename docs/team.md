@@ -10,7 +10,9 @@ order: 50
 
 ## Fayyaz Ahamed
 
-**TODO: Fayyaz** 
+Fayyaz is a fourth-year BioE undergraduate student. He has previously taken CS 61A and the BioE equivalents of EE 16A/B, is concurrently taking EE 120, and has taken several upper-division BioE classes in biomedical devices and imaging. He has prior image analysis and CAD experience from his time in the Kurhanewicz Lab at UCSF.
+
+Fayyaz worked closely with Eric to implement all of the computer vision processes. He helped out with the implementation of color thresholding in the HSV color space, the static transform publisher that connects the TF trees of the Baxter and Realsense, PCA to classify types and orientation of kitchenware, and writing the custom messages and publisher that send object type and transform to baxter. He also assisted the actuation team test and improve reliability of the various pickup protocols.
 
 ## Eric Hu
 
