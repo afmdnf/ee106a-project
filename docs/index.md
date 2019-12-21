@@ -12,7 +12,7 @@ Our project goal was to identify various kitchenware scattered about a table, cl
 
 ## Project Description
 
-Our system uses an external RealSense depth camera to obtain pointclouds within the Baxter workspace, isolates only the pointclouds containing kitchenware, classifies each available object based on its unique point distribution, and sends that data to Baxter, which can subsequently execute a series of commands to pick each object up, manipulate it, and then sort it into a designated location within the workspace. Getting this system to work reliably involves tight coordination between several subsystems, each of which requires navigating various interesting problems:
+Our system uses an external RealSense depth camera to obtain pointclouds within the Baxter workspace, isolates only the pointclouds containing kitchenware, classifies each available object based on its unique point distribution, and sends that data to Baxter. Baxter subsequently executes a series of commands to pick each object up, manipulate it, and then sort it into a designated location within the workspace. Getting this system to work reliably involves tight coordination between several subsystems, each of which requires navigating various interesting problems:
 * The RealSense camera must be localized with respect to the Baxter.
 * Kitchenware within an image must be confidently distinguished from the table behind it, while accounting for noise and visual artifacts.
 * The number of unique objects on the table must be determined quickly and accurately, without computationally-intensive algorithms.

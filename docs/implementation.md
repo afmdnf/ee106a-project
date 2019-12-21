@@ -74,4 +74,8 @@ Once the object has been successfully picked up, it is placed at a particular pr
 
 ## Graphical Overview
 
-**Add an overall system diagram here!**
+To calibrate the camera, we run `ar_track.launch` and `realsense_baxter_listener.py` with both cameras pointed at a common AR tag. When the transform is found and published, we kill `ar_track.launch` and remove the AR marker.
+
+Now the system is ready to identify kitchenware. All of the computer vision subprocesses are run from `main.py`, which is left to run continuously and publish `Pickup` objects to the `objects` topic. From here, `obj_move.py` is run on Baxter, which subscribes to `objects`. When a `Pickup` message is received, this node calls several subprocesses for each object type (`cup.py`, `plate.py`, `spoon.py`, and `camera_control.py`), to handle each object present. This node runs continuously, as long as the state of objects in the workspace continues to be published.
+
+![System Flow Chart](/assets/images/high_level_schematic.jpg)
