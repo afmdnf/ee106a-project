@@ -8,6 +8,8 @@ Our project successfully met our most important goals of being able to identify 
 
 ## Difficulties We Faced
 ### Setup
+* The first major issue we found was that the same ar marker viewed by the Realsense camera and the Baxter wrist camera couldn't simultaneously be stored in the TF trees of the Realsense and Baxter as a linking branch from both. To fix this, we found the transform from the Realsense to the ar marker, and the transform from the ar marker to Baxter, multiplied them, and published that transform with a static transform publisher to link the TF trees.
+
 * When calibrating the RealSense with the Baxter, a major issue was deciding where to launch the camera and our static transform publisher. We tried SSH-ing into Baxter and running all our commands, but when we did so, the speed of all our nodes greatly slowed down. Thus, we found out that if the local computer's URI was set to that of the Baxter, we could run all of our computer vision and setup nodes locally while having the information passed to Baxter. This greatly sped up the execution of our code. 
 
 * Often, and seemingly randomly, we found that `ar_track.launch` was publishing incorrect transforms from Baxter to the AR tag, which caused our RealSense localization to fail. After several days, we determined that Baxter had recently restarted and upon startup the camera resolution was 320x200, while the AR tracker assumes that the Baxter wrist camera is at the full resolution of 1280x800. As soon as we fixed this, the transform became accurate and our static transform publisher correctly localized the RealSense.
