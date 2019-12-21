@@ -71,4 +71,4 @@ Once the object has been successfully picked up, it is placed at a particular pr
 
 Overall, our system works by continuously using the Kinect to collect image data. Ar_track_alvar then takes this data and computes which AR tags are visible. Tf then computes the transformations to each of the tags. While this is all happening, RoverGoSmooth.py can be ran with a particular AR tag selection. RoverGoSmooth.py then periodically looks up the transformation to the desired AR tag and makes a decision about which direction to move in. Once the robot is within the desired distance and angle tolerances relative to its desired AR tag, the attempts to grab the object at the AR tag via grabBlock.py
 
-![System Flow Chart](/assets/robot_images/system_flow_chart.jpg)
+![System Flow Chart](/assets/images/high_level_schematic.jpg)
