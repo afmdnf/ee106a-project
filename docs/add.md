@@ -327,3 +327,15 @@ Some software resources that we used:
 <iframe width="560" height="315" src="https://www.youtube.com/embed/yT-osnECr04" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/wcvgII80D3w" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kIB_kAqCUNY?start=18" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+## Miscellaneous pictures
+* Example Baxter wrist camera image, with cup in sight
+![wrist_cam](/assets/wrist_vision/hand.png)
+
+* Extra setup photos
+![extra_1](/assets/setup_images/setup_1b.jpg)
+![extra_2](/assets/setup_images/setup_2b.jpg)
+
+* Extra RViz screencaps
+![rviz_a](/assets/rviz/rviz1.png)
+![rviz_b](/assets/rviz/rviz3.png)
