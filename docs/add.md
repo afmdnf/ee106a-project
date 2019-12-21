@@ -4,202 +4,326 @@ order: 60
 
 # Additional Materials
 
-## Script to Use Motor Controller and AR Tracker (RoverGoSmooth.py)
+## Script for Object Pickup (`mv/src/obj_move.py`)
 
 ```python
-import tf2_ros
-import rospy
-import numpy as np
-import sys
-import os
-import RPi.GPIO as GPIO
-import PiMotor
-import time
-import grabBlock as grabber
+from baxter_interface import gripper as baxter_gripper
+from path_planner import PathPlanner
 
-GPIO.setup(8, GPIO.IN)
-GPIO.setup(10, GPIO.IN)
+from objects.cup import Cup
+from objects.plate import Plate
+from objects.spoon import Spoon
 
-class RoverGo:
+from mv.msg import Pickup
 
-	def __init__(self):
-		# self.pose = Pose()
-		rospy.init_node('tf_listener', anonymous=True)
-		self.rover_frame = "camera_link"
-		self.goal_frame = None
-		self.tfBuffer = tf2_ros.Buffer()
-		self.tfListener= tf2_ros.TransformListener(self.tfBuffer)
-		self.rate = rospy.Rate(10)
-		self.left_motor = PiMotor.Motor("MOTOR1",1)
-		self.right_motor = PiMotor.Motor("MOTOR2",1)
-		self.distance_tolerance = 0.5
-                self.angle_tolerance = 0.25
-		self.goalReached = False
+os.system('rosrun baxter_tools camera_control.py -o right_hand_camera -r 1280x800')
+rospy.init_node('obj_mover', anonymous=True)
+arm = "right"
+planner = PathPlanner(arm + "_arm")
+gripper = baxter_gripper.Gripper(arm)
+gripper.calibrate()
 
-	def dist(self, goalT):
-		return np.sqrt(goalT.x * goalT.x + goalT.y * goalT.y)
+pro = None
 
-	def angle(self, goalT):
-		return np.arctan(goalT.y / goalT.x)
+def move(msg):
+    items, transforms = msg.items, msg.transforms
+    if not transforms or len(items) != len(transforms):
+        print("[ERROR]: Invalid message received")
+        return
+    print("Received command for %d items" % len(items))
 
-	def currTrans(self):
-		trans = self.tfBuffer.lookup_transform(self.rover_frame, self.goal_frame, rospy.Time(0)).transform
-	        #print("Distance:", self.dist(trans.translation), "Angle:", self.angle(trans.translation))
-                #print(trans.translation)
-                return trans
+    # Pick up objects starting from cup and then rightmost (y) + closest (x)
+    processed = sorted(zip(items, transforms), key=lambda x:(-x[0], x[1].transform.translation.y, x[1].transform.translation.x))
+    for item, tr in processed:
+        obj_id = int(item)
+        if obj_id not in [1, 2, 3]:
+            print("[ERROR]: Invalid object %d at index %d" % (obj_id, i))
+            continue
 
-	def photo_left(self):
-		return GPIO.input(10)
+        x, y = tr.transform.translation.x, tr.transform.translation.y
+        obj = None
+        if obj_id == 1:
+            obj = Plate(x, y, gripper, planner)
+        if obj_id == 2:
+            orient = [tr.transform.rotation.x, tr.transform.rotation.y, tr.transform.rotation.z, tr.transform.rotation.w]
+            obj = Spoon(x, y, gripper, planner)
+        elif obj_id == 3:
+            obj = Cup(x, y, gripper, planner)
 
-	def photo_right(self):
-		return GPIO.input(8)
+        if obj:
+            tuck()
+            gripper.close()
 
-	def leftForward(self, val):
-                #return
-                self.left_motor.forward(val)
+            print("Planning for:", obj_id, x, y)
+            try:
+                obj.perform_actions()
+            except Exception as e:
+                print e
+        else:
+            print("[ERROR]: Invalid object %d at index %d" % (obj_id, i))
 
-	def rightForward(self, val):
-                #return
-		self.right_motor.forward(val)
-
-	def leftReverse(self, val):
-                #return
-		self.left_motor.reverse(val)
-
-	def rightReverse(self, val):
-                #return
-		self.right_motor.reverse(val)
-
-	def stopMotors(self):
-		self.left_motor.stop()
-		self.right_motor.stop()
-
-	def drive(self, goalT, error_func, tolerance, left_motor_func, right_motor_func, delta_input=5, max_ticks=35):
-		encoderTolerance = 3
-		photo_total_right = 0
-		photo_total_left = 0
-		photo_right_prev = self.photo_right()
-		photo_left_prev = self.photo_left()
-		right_input = 100
-		left_input = 70
-                start_time = rospy.get_time()
-		while goalT is None or abs(error_func(goalT)) > tolerance:
-		    photo_right_current = self.photo_right()
-		    photo_left_current = self.photo_left()
-		    if (photo_right_current != photo_right_prev):
-		        photo_total_right += 1
-		    if (photo_left_current != photo_left_prev):
-		        photo_total_left += 1
-		    photo_right_prev = photo_right_current
-		    photo_left_prev = photo_left_current
-                    if max(photo_total_left, photo_total_right) > max_ticks:
-                        break
-		    delta = photo_total_left - photo_total_right
-		    if (abs(delta) > encoderTolerance):
-		    	right_input += delta
-		    	if right_input > 100:
-		    		right_input = 100
-		    	elif right_input < 0:
-		    		right_input = 0
-                    left_motor_func(left_input)
-		    right_motor_func(right_input)
-                    try:
-		        goalT = self.currTrans().translation
-                    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                        goalT = None
-		self.stopMotors()
-                rospy.sleep(3)
-		#print("Right photo interruptor: " + str(photo_total_right))
-		#print("Left photo interruptor: " + str(photo_total_left))
-
-	def driveStraight(self, goalT):
-		print("Driving straight...")
-		self.drive(goalT, self.dist, self.distance_tolerance, self.leftForward, self.rightForward)
-
-	def turnLeft(self, goalT):
-		print("Turning left...")
-		self.drive(goalT, self.angle, self.angle_tolerance, self.leftReverse, self.rightForward, max_ticks=5)
-
-	def turnRight(self, goalT):
-		print("Turning right...")
-		self.drive(goalT, self.angle, self.angle_tolerance, self.leftForward, self.rightReverse, max_ticks=5)
-
-	def goToTag(self, goal_frame):
-                trans = None
-                prevTrans = None
-		self.goal_frame = goal_frame
-		while not rospy.is_shutdown() and not self.goalReached:
-			try:
-                                if trans is not None:
-                                    prevTrans = trans
-		                trans = self.currTrans()
-		                goalTranslation = trans.translation
-
-                                if self.dist(goalTranslation) <= self.distance_tolerance and self.angle(goalTranslation) <= self.angle_tolerance:
-					self.goalReached = True
-
-				if not self.goalReached:
-                                        currAngle = self.angle(goalTranslation)
-				        if np.abs(currAngle) >= self.angle_tolerance:
-					        if currAngle < 0:
-						        self.turnRight(goalTranslation)
-					        else:
-						        self.turnLeft(goalTranslation)
-				        elif self.dist(goalTranslation) >= self.distance_tolerance:
-					        self.driveStraight(goalTranslation)
-
-			except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-				print("Tag not detected. Searching...")
-                                if prevTrans is not None:
-                                    prevAngle = self.angle(prevTrans.translation)
-                                    if prevAngle > 0:
-                                        self.turnLeft(None)
-                                    else:
-                                        self.turnRight(None)
-                                else:
-                                    self.turnRight(None)
-                                rospy.sleep(5)
-                self.stopMotors()
-		print("We made it folks")
-                grabber.grab()
+def tuck():
+    global pro
+    if pro:
+        os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
+    os.system('rosrun baxter_tools tuck_arms.py -u')
+    pro = subprocess.Popen("rosrun baxter_interface joint_trajectory_action_server.py", stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+    rospy.sleep(1.0)
 
 
 if __name__ == '__main__':
-	r = RoverGo()
-	numS = input("Which tag would you like?  ")
-	tag = 'ar_marker_' + str(numS)
-	r.goToTag(tag)
+    rospy.Subscriber("objects", Pickup, move, queue_size=1)
+    rospy.spin()
 ```
+
+## Script for Computer Vision (`segmentation/src/main.py`)
+```python
+from sensor_msgs.msg import Image, CameraInfo, PointCloud2
+from mv.msg import Pickup, StringArray
+from cv_bridge import CvBridge
+from sklearn.decomposition import PCA
+from image_segmentation import segment_image, show_image
+from pointcloud_segmentation import segment_pointcloud
+from sensor_msgs import point_cloud2
+
+
+pca = PCA(3)
+
+def get_camera_matrix(camera_info_msg):
+    return np.array(camera_info_msg.K).reshape((3,3))
+
+def isolate_objects_of_interest(points, image, cam_matrix, trans, rot):
+    segmented_image = segment_image(image)
+    cloudList = []
+    for mask in segmented_image:
+        cloud = segment_pointcloud(np.copy(points), mask, cam_matrix, trans, rot)
+        cloudList.append(cloud)
+    return cloudList
+
+def numpy_to_pc2_msg(points):
+    return ros_numpy.msgify(PointCloud2, points, stamp=rospy.Time.now(),
+        frame_id='camera_depth_optical_frame')
+
+def pca_object(points):
+    global pca
+    point_array = np.transpose(np.array([[p[0] for p in points],
+                                         [p[1] for p in points],
+                                         [p[2] for p in points]]))
+    if point_array.shape[1] < 3 or point_array.shape[0] < 25:
+        if point_array.shape[0] < 25:
+            print("Not Enough Points")
+        return [0, 0, 0]
+    try:
+        pca.fit(point_array)
+        sigma = np.array(pca.singular_values_)    
+        return np.array(sigma / sigma[0])
+    except Exception as e:
+        print(e)
+        return [0, 0, 0]
+
+def classify_object(sigma):
+    if sigma[0] != 1:
+        return 0
+
+    if (sigma[1] > 0.75 and sigma[2] < 0.3):
+        return 1 # plate
+    elif (sigma[1] < 0.7 and sigma[2] < 0.3):
+        return 2 # spoon
+    else:
+        return 3 # cup
+    return 0    
+
+def align_axes(points, object_num):
+    global pca
+    try:
+        point_array = np.transpose(np.array([[p[0] for p in points],
+                                             [p[1] for p in points],
+                                             [p[2] for p in points]]))
+        com = np.median(point_array, 0)
+        rot_mat = np.transpose(pca.components_)
+        rot_mat = np.hstack((rot_mat, np.zeros((3, 1))))
+        rot_mat = np.vstack((rot_mat, [0, 0, 0, 1]))
+        rot_quat = tf.transformations.quaternion_from_matrix(rot_mat)
+        rot_quat = rot_quat / np.linalg.norm(rot_quat)
+
+        t = geometry_msgs.msg.TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = "camera_depth_optical_frame"
+        t.child_frame_id = "object_center_of_mass_" + str(object_num)
+        t.transform.translation.x = com[0]
+        t.transform.translation.y = com[1]
+        t.transform.translation.z = com[2]
+
+        t.transform.rotation.x = rot_quat[0]
+        t.transform.rotation.y = rot_quat[1]
+        t.transform.rotation.z = rot_quat[2]
+        t.transform.rotation.w = rot_quat[3]
+        return t
+    except:
+        return geometry_msgs.msg.TransformStamped()
+
+
+class Data_Storer:
+    def __init__(self, array = np.zeros(3), pose = geometry_msgs.msg.TransformStamped()):
+        self.array = array
+        self.pose = pose
+
+class PointcloudProcess:
+    """
+    Wraps the processing of a pointcloud from an input ros topic and publishing
+    to another PointCloud2 topic.
+    """
+    def __init__(self, points_sub_topic, 
+                       image_sub_topic,
+                       cam_info_topic,
+                       points_pub_topic):
+
+        self.num_steps = 0
+
+        self.messages = deque([], 5)
+        self.pointcloud_frame = None
+        points_sub = message_filters.Subscriber(points_sub_topic, PointCloud2)
+        image_sub = message_filters.Subscriber(image_sub_topic, Image)
+        caminfo_sub = message_filters.Subscriber(cam_info_topic, CameraInfo)
+
+        self._bridge = CvBridge()
+        self.listener = tf.TransformListener()
+        
+        self.points_pub = rospy.Publisher(points_pub_topic, PointCloud2, queue_size=10)
+        self.image_pub = rospy.Publisher('segmented_image', Image, queue_size=10)
+        
+        ts = message_filters.ApproximateTimeSynchronizer([points_sub, image_sub, caminfo_sub],
+                                                          10, 0.1, allow_headerless=True)
+        ts.registerCallback(self.callback)
+
+    def callback(self, points_msg, image, info):
+        try:
+            intrinsic_matrix = get_camera_matrix(info)
+            rgb_image = ros_numpy.numpify(image)
+            points = ros_numpy.numpify(points_msg)
+        except Exception as e:
+            rospy.logerr(e)
+            return
+        self.num_steps += 1
+        self.messages.appendleft((points, rgb_image, intrinsic_matrix))
+
+    def publish_once_from_queue(self):
+        if self.messages:
+            points, image, info = self.messages.pop()
+            try:
+                trans, rot = self.listener.lookupTransform(
+                                                       '/camera_color_optical_frame',
+                                                       '/camera_depth_optical_frame',
+                                                       rospy.Time(0))
+                rot = tf.transformations.quaternion_matrix(rot)[:3, :3]
+            except (tf.LookupException,
+                    tf.ConnectivityException, 
+                    tf.ExtrapolationException) as e:
+                print(e)
+                return [0, 0, 0]
+            points = isolate_objects_of_interest(points, image, info, 
+                np.array(trans), np.array(rot))
+            my_data = []
+            br = tf2_ros.TransformBroadcaster()
+            for idx, cloud in enumerate(points):
+                points_msg = numpy_to_pc2_msg(cloud)
+                self.points_pub.publish(points_msg)
+                temp = pca_object(cloud)
+                pose = align_axes(cloud, idx)
+                br.sendTransform(pose)
+                try:
+                    pose_from_base = self.listener.lookupTransform('base', pose.child_frame_id, rospy.Time(0))
+                    final_pose = geometry_msgs.msg.TransformStamped()
+                    final_pose.transform.translation.x = pose_from_base[0][0]
+                    final_pose.transform.translation.y = pose_from_base[0][1]
+                    final_pose.transform.translation.z = pose_from_base[0][2]
+
+                    final_pose.transform.rotation.x = pose_from_base[1][0]
+                    final_pose.transform.rotation.y = pose_from_base[1][1]
+                    final_pose.transform.rotation.z = pose_from_base[1][2]
+                    final_pose.transform.rotation.w = pose_from_base[1][3]
+                    final_pose.header.stamp = rospy.Time.now()
+                    final_pose.header.frame_id = "base"
+                    final_pose.child_frame_id = pose.child_frame_id
+                    my_data.append(Data_Storer(temp, final_pose))
+                except Exception as e:
+                    print(e)
+                    return [Data_Storer()]
+            return my_data
+        else:
+            return [Data_Storer()]
+
+    def getObjectType():
+        return self.object
+
+    def getPose():
+        return self.pose
+
+def main():
+    CAM_INFO_TOPIC = '/camera/color/camera_info'
+    RGB_IMAGE_TOPIC = '/camera/color/image_raw'
+    POINTS_TOPIC = '/camera/depth/color/points'
+    POINTS_PUB_TOPIC = 'segmented_points'
+
+    rospy.init_node('realsense_listener')
+    process = PointcloudProcess(POINTS_TOPIC, RGB_IMAGE_TOPIC,
+                                CAM_INFO_TOPIC, POINTS_PUB_TOPIC)
+    pub = rospy.Publisher('objects', Pickup, queue_size=1)
+    r = rospy.Rate(1000)
+    ii = 0
+    arrayFlag = True
+    sigma_array = [[[0]*3]*20]*10
+    last_object_type = []
+    buffer_idx = 0
+
+    while not rospy.is_shutdown():
+        my_data = process.publish_once_from_queue()
+        poseList = []
+        object_type = []
+        if len(sigma_array) < len(my_data):
+            sigma_array = [[[0]*3]*20]*len(my_data)
+        for idx, data in enumerate(my_data):
+            sigma_array[idx][ii][:] = data.array
+            poseList.append(data.pose)
+            pca_vals = np.nanmean(sigma_array[idx], 0)
+            object_type.append(classify_object(pca_vals))
+        ii = (ii + 1) % 20
+        nonzeros = [item != 0 for item in object_type]
+        print(object_type)
+
+        if last_object_type != object_type:
+            buffer_idx = 0
+            last_object_type = object_type
+        else:
+            buffer_idx += 1
+
+        if buffer_idx > 10:
+            buffer_idx = 0
+            try:
+                pub.publish(np.array(object_type)[nonzeros], np.array(poseList)[nonzeros])
+            except Exception:
+                traceback.print_exc()
+            r.sleep()
+```
+
 
 ## Our Code
 
-The rest of our code can be found on our [GitHub](https://github.com/raymondbacco/106Arobot). 
+The rest of our code can be found on our [GitHub](https://github.com/afmdnf/ee106a-project). 
 
 Some software resources that we used:  
-* ROS Kinetic
-* [Freenect_Stack](https://github.com/ros-drivers/freenect_stack.git)
-* [Libfreenect](https://github.com/OpenKinect/libfreenect.git)
+* [MoveIt](https://github.com/ros-planning/moveit)
 * [AR_Track_Alvar](https://github.com/ros-perception/ar_track_alvar.git)
-* [RGBD__Launch](https://github.com/ros-drivers/rgbd_launch.git)
+* [RealSense ROS](https://github.com/IntelRealSense/realsense-ros)
+
 
 ## Hardware Data Sheets
 
-* [Raspberry pi 3 B+](https://static.raspberrypi.org/files/product-briefs/Raspberry-Pi-Model-Bplus-Product-Brief.pdf)
-* [7 “ Raspberry Pi Touchscreen](http://www.farnell.com/datasheets/1958036.pdf)
-* [Xbox 360 Kinect](https://zoomicon.wordpress.com/2015/07/28/kinect-for-xbox-360-and-kinect-for-windows-kfw-v1-specs/)
-* [PCA 9685 16 channel Servo Controller](https://cdn-shop.adafruit.com/datasheets/PCA9685.pdf)
-* [SB Components Motor Shield](https://sb-components.co.uk/motor-shield.html)
-* [Mg966r 4.8V-7.2V Servo Motor](https://www.electronicoscaldas.com/datasheet/MG996R_Tower-Pro.pdf)
-* [SunFounder Photo-interrupter Sensor Module](https://www.sunfounder.com/learn/lesson-12-photo-interrupter-sensor-kit-v2-0-for-b-plus.html)
+* [Rethink Robotics Baxter](https://www.allied-automation.com/wp-content/uploads/2015/02/Baxter_datasheet_5.13.pdf)
+* [Intel RealSense D435](https://www.intel.com/content/dam/support/us/en/documents/emerging-technologies/intel-realsense-technology/Intel-RealSense-D400-Series-Datasheet.pdf)
 
-## Video
+## Videos
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/toi6eP09p0c" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
-## Pictures
-![Arm Mount](/assets/robot_images/arm_mount.jpg){:height="50%" width="50%"} ![Back Right View](/assets/robot_images/back_right_view.jpg){:height="50%" width="50%"}
-![Bottom Battery Holder](/assets/robot_images/bottom_battery_holder.jpg){:height="50%" width="50%"} ![Front Battery Holder](/assets/robot_images/front_battery_holder.jpg){:height="50%" width="50%"}
-![Front View](/assets/robot_images/front_view.jpg){:height="50%" width="50%"} ![Kinect Mount](/assets/robot_images/kinect_mount.jpg){:height="50%" width="50%"}
-![Left Side View](/assets/robot_images/left_side_view1.jpg){:height="50%" width="50%"} ![Photo Interupter Mount](/assets/robot_images/photo_interuptor_mount.jpg){:height="50%" width="50%"}
-![Right Side View](/assets/robot_images/right_side_view.jpg){:height="50%" width="50%"} ![Screen Mount](/assets/robot_images/screen_mount.jpg){:height="50%" width="50%"}
-
+<iframe width="560" height="315" src="https://www.youtube.com/embed/yT-osnECr04" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/wcvgII80D3w" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/kIB_kAqCUNY?start=18" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
