@@ -24,6 +24,6 @@ Eric worked closely with Fayyaz, helping to implement all of the processes invol
 
 ## Mohammed Shaikh
 
-Mohammed is a fourth-yeah EECS undergraduate student. He has taken EE 16AB, EE 120 and most CS upper division courses such as CS 162, CS 188, CS 189. His primary expertise is in programming and design of software systems.
+Mohammed is a fourth-year EECS undergraduate student. He has taken EE 16AB, EE 120 and most CS upper division courses such as CS 162, CS 188, CS 189. His primary expertise is in programming and design of software systems.
 
 Mohammed worked with Naser on the grasping and actuation aspect of the project, including processing the transforms from the vision team for path planning, visual servo and ensuring object pickup reliability.
